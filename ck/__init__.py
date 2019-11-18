@@ -25,29 +25,38 @@ class PassiveSession(object):
         ssh_username=None,
         ssh_password=None,
         ssh_public_key=None,
-        ssh_command_prefix=''
+        ssh_command_prefix=None
     ):
         assert type(host) is str
         assert type(tcp_port) is int
         assert type(http_port) is int
+        assert type(ssh_port) is int
         assert ssh_username is None or type(ssh_username) is str
         assert ssh_password is None or type(ssh_password) is str
         assert ssh_public_key is None or type(ssh_public_key) is str
-        assert type(ssh_command_prefix) is str
+        assert ssh_command_prefix is None or type(ssh_command_prefix) is str
 
         self._host = host
         self._tcp_port = tcp_port
         self._http_port = http_port
-        self._ssh_client = ssh.connect(
-            host,
-            ssh_port,
-            ssh_username,
-            ssh_password,
-            ssh_public_key
-        )
+        self._ssh_port = ssh_port
+        self._ssh_username = ssh_username
+        self._ssh_password = ssh_password
+        self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix
+        self._ssh_client = None
 
-    def _connect(
+    def _connect_ssh():
+        if self._ssh_client is None:
+            self._ssh_client = ssh.connect(
+                self._host,
+                self._ssh_port,
+                self._ssh_username,
+                self._ssh_password,
+                self._ssh_public_key
+            )
+
+    def _run(
         self,
         gen_stdin,
         gen_stdout,
@@ -85,6 +94,8 @@ class PassiveSession(object):
             )
             ok = 200
         elif method == 'ssh':
+            _connect_ssh()
+
             join_raw = ssh.run(
                 self._ssh_client,
                 [
@@ -137,7 +148,7 @@ class PassiveSession(object):
             while True:
                 error_text_list.append((yield).decode())
 
-        join_raw = self._connect(
+        join_raw = self._run(
             make_stdin(),
             make_stdout(),
             make_stderr(),
