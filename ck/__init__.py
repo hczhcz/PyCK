@@ -46,7 +46,9 @@ class PassiveSession(object):
         self._ssh_command_prefix = ssh_command_prefix
         self._ssh_client = None
 
-    def _connect_ssh():
+    def _connect_ssh(
+        self
+    ):
         if self._ssh_client is None:
             self._ssh_client = ssh.connect(
                 self._host,
@@ -94,7 +96,7 @@ class PassiveSession(object):
             )
             ok = 200
         elif method == 'ssh':
-            _connect_ssh()
+            self._connect_ssh()
 
             join_raw = ssh.run(
                 self._ssh_client,
