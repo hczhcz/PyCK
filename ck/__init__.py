@@ -1,5 +1,4 @@
 import pathlib
-import sys
 import types
 
 from ck.connection import http
@@ -7,8 +6,8 @@ from ck.connection import process
 from ck.connection import ssh
 
 
-dir_path = pathlib.Path(__file__).parent
-ck_path = dir_path.joinpath('clickhouse')
+_dir_path = pathlib.Path(__file__).parent
+_ck_path = _dir_path.joinpath('clickhouse')
 
 
 class CKError(RuntimeError):
@@ -73,7 +72,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    str(ck_path),
+                    str(_ck_path),
                     'client',
                     '--host',
                     self._host,
@@ -106,7 +105,7 @@ class PassiveSession(object):
                         if self._ssh_command_prefix is None
                         else [self._ssh_command_prefix]
                     ),
-                    str(ck_path),
+                    str(_ck_path),
                     'client',
                     '--port',
                     str(self._tcp_port),
