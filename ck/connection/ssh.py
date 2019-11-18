@@ -3,13 +3,23 @@ import threading
 import types
 
 
-def connect(host, *args, **kwargs):
+def connect(
+    host,
+    port=22,
+    username=None,
+    password=None,
+    public_key=None
+):
     assert type(host) is str
+    assert type(port) is int
+    assert username is None or type(username) is str
+    assert password is None or type(password) is str
+    assert public_key is None or type(public_key) is str
 
     client = paramiko.SSHClient()
 
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(host, *args, **kwargs)
+    client.connect(host, port, username, password, public_key)
 
     return client
 

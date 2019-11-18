@@ -21,18 +21,31 @@ class PassiveSession(object):
         host='localhost',
         tcp_port=9000,
         http_port=8123,
-        ssh_args={}
+        ssh_port=22,
+        ssh_username=None,
+        ssh_password=None,
+        ssh_public_key=None,
+        ssh_command_prefix=''
     ):
         assert type(host) is str
         assert type(tcp_port) is int
         assert type(http_port) is int
-        assert type(ssh_args) is dict
+        assert ssh_username is None or type(ssh_username) is str
+        assert ssh_password is None or type(ssh_password) is str
+        assert ssh_public_key is None or type(ssh_public_key) is str
+        assert type(ssh_command_prefix) is str
 
         self._host = host
         self._tcp_port = tcp_port
         self._http_port = http_port
-
-        self._ssh_client = ssh.connect(host, **ssh_args)
+        self._ssh_client = ssh.connect(
+            host,
+            ssh_port,
+            ssh_username,
+            ssh_password,
+            ssh_public_key
+        )
+        self._ssh_command_prefix = ssh_command_prefix
 
     def _connect(
         self,
@@ -44,7 +57,7 @@ class PassiveSession(object):
         assert type(gen_stdin) is types.GeneratorType
         assert type(gen_stdout) is types.GeneratorType
         assert type(gen_stderr) is types.GeneratorType
-        assert method in {'tcp', 'ssh', 'http'}
+        assert method in {'tcp', 'http', 'ssh'}
 
         if method == 'tcp':
             join_raw = process.run(
@@ -53,20 +66,6 @@ class PassiveSession(object):
                     'client',
                     '--host',
                     self._host,
-                    '--port',
-                    str(self._tcp_port),
-                ],
-                gen_stdin,
-                gen_stdout,
-                gen_stderr
-            )
-            ok = 0
-        elif method == 'ssh':
-            join_raw = ssh.run(
-                self._ssh_client,
-                [
-                    str(ck_path),
-                    'client',
                     '--port',
                     str(self._tcp_port),
                 ],
@@ -85,6 +84,25 @@ class PassiveSession(object):
                 gen_stderr
             )
             ok = 200
+        elif method == 'ssh':
+            join_raw = ssh.run(
+                self._ssh_client,
+                [
+                    *(
+                        []
+                        if self._ssh_command_prefix is None
+                        else [self._ssh_command_prefix]
+                    ),
+                    str(ck_path),
+                    'client',
+                    '--port',
+                    str(self._tcp_port),
+                ],
+                gen_stdin,
+                gen_stdout,
+                gen_stderr
+            )
+            ok = 0
 
         def join():
             return join_raw() == ok
@@ -101,7 +119,7 @@ class PassiveSession(object):
         assert type(query_text) is str
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
-        assert method in {'tcp', 'ssh', 'http'}
+        assert method in {'tcp', 'http', 'ssh'}
 
         def make_stdin():
             yield f'{query_text}\n'.encode()
@@ -148,6 +166,6 @@ class PassiveSession(object):
         assert type(query_text) is str
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
-        assert method in {'tcp', 'ssh', 'http'}
+        assert method in {'tcp', 'http', 'ssh'}
 
         return self.query_async(query_text, gen_in, gen_out, method)()
