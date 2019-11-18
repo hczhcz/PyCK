@@ -60,10 +60,10 @@ class PassiveSession(object):
 
     def _run(
         self,
+        method,
         gen_stdin,
         gen_stdout,
-        gen_stderr,
-        method='http'
+        gen_stderr
     ):
         assert type(gen_stdin) is types.GeneratorType
         assert type(gen_stdout) is types.GeneratorType
@@ -122,17 +122,19 @@ class PassiveSession(object):
 
         return join
 
-    def query_async(
+    def query(
         self,
         query_text,
+        use_async=False,
+        method='http',
         gen_in=None,
-        gen_out=None,
-        method='http'
+        gen_out=None
     ):
         assert type(query_text) is str
+        assert type(use_async) is bool
+        assert method in {'tcp', 'http', 'ssh'}
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
-        assert method in {'tcp', 'http', 'ssh'}
 
         def make_stdin():
             yield f'{query_text}\n'.encode()
@@ -156,10 +158,10 @@ class PassiveSession(object):
                 stderr_list.append((yield))
 
         join_raw = self._run(
+            method,
             make_stdin(),
             make_stdout(),
-            make_stderr(),
-            method
+            make_stderr()
         )
 
         def join():
@@ -173,18 +175,20 @@ class PassiveSession(object):
             if gen_out is None:
                 return b''.join(stdout_list)
 
-        return join
+        if use_async:
+            return join
 
-    def query_sync(
+        return join()
+
+    def ping(
         self,
-        query_text,
-        gen_in=None,
-        gen_out=None,
         method='http'
     ):
-        assert type(query_text) is str
-        assert gen_in is None or type(gen_in) is types.GeneratorType
-        assert gen_out is None or type(gen_out) is types.GeneratorType
         assert method in {'tcp', 'http', 'ssh'}
 
-        return self.query_async(query_text, gen_in, gen_out, method)()
+        try:
+            return self.query('select 42', method=method) == b'42\n'
+        except ConnectionError:
+            return False
+        except CKError:
+            return False
