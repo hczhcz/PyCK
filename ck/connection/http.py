@@ -26,7 +26,7 @@ def run(
     response = None
     error = None
 
-    def checked_stdin():
+    def make_stdin():
         for data in gen_stdin:
             assert type(data) is bytes
 
@@ -39,7 +39,7 @@ def run(
 
         try:
             connection = http.client.HTTPConnection(host, port)
-            connection.request('POST', path, checked_stdin())
+            connection.request('POST', path, make_stdin())
 
             response = connection.getresponse()
 
