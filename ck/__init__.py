@@ -138,15 +138,20 @@ class PassiveSession(object):
             if gen_in is not None:
                 yield from gen_in
 
+        stdout_list = []
+
         def make_stdout():
-            if gen_out is not None:
+            if gen_out is None:
+                while True:
+                    stdout_list.append((yield))
+            else:
                 yield from gen_out
 
-        error_text_list = []
+        stderr_list = []
 
         def make_stderr():
             while True:
-                error_text_list.append((yield).decode())
+                stderr_list.append((yield))
 
         join_raw = self._run(
             make_stdin(),
@@ -159,11 +164,12 @@ class PassiveSession(object):
             if not join_raw():
                 raise CKError(
                     self._host,
-                    self._tcp_port,
-                    self._http_port,
                     query_text,
-                    ''.join(error_text_list)
+                    b''.join(stderr_list).decode()
                 )
+
+            if gen_out is None:
+                return b''.join(stdout_list)
 
         return join
 
