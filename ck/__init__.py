@@ -79,12 +79,19 @@ class PassiveSession(object):
         method,
         gen_stdin,
         gen_stdout,
-        gen_stderr
+        gen_stderr,
+        settings={}
     ):
+        assert method in {'tcp', 'http', 'ssh'}
         assert type(gen_stdin) is types.GeneratorType
         assert type(gen_stdout) is types.GeneratorType
         assert type(gen_stderr) is types.GeneratorType
-        assert method in {'tcp', 'http', 'ssh'}
+        assert type(settings) is dict
+        for key, value in settings.items():
+            assert type(key) is str
+            assert type(value) is str
+
+        # TODO: check setting keys
 
         if method == 'tcp':
             join_raw = process.run(
@@ -93,6 +100,10 @@ class PassiveSession(object):
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
+                    *(
+                        f'--{key}={value}'
+                        for key, value in settings.items()
+                    ),
                 ],
                 gen_stdin,
                 gen_stdout,
@@ -100,10 +111,15 @@ class PassiveSession(object):
             )
             ok = 0
         elif method == 'http':
+            arg_text = '&'.join(
+                f'{key}={value}'
+                for key, value in settings.items()
+            )
+
             join_raw = http.run(
                 self._host,
                 self._http_port,
-                '/',
+                f'/?{arg_text}',
                 gen_stdin,
                 gen_stdout,
                 gen_stderr
@@ -123,6 +139,10 @@ class PassiveSession(object):
                     str(_ck_path),
                     'client',
                     f'--port={self._tcp_port}',
+                    *(
+                        f'--{key}={value}'
+                        for key, value in settings.items()
+                    ),
                 ],
                 gen_stdin,
                 gen_stdout,
@@ -141,13 +161,18 @@ class PassiveSession(object):
         method='http',
         use_async=False,
         gen_in=None,
-        gen_out=None
+        gen_out=None,
+        settings={}
     ):
         assert type(query_text) is str
         assert method in {'tcp', 'http', 'ssh'}
         assert type(use_async) is bool
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
+        assert type(settings) is dict
+        for key, value in settings.items():
+            assert type(key) is str
+            assert type(value) is str
 
         stdout_list = []
         stderr_list = []
@@ -173,7 +198,8 @@ class PassiveSession(object):
             method,
             make_stdin(),
             make_stdout(),
-            make_stderr()
+            make_stderr(),
+            settings
         )
 
         def join():
