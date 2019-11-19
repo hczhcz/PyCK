@@ -14,6 +14,15 @@ _config_path = _dir_path.joinpath('config.xml')
 _users_path = _dir_path.joinpath('users.xml')
 
 
+def _make_dummy_in():
+    yield from ()
+
+
+def _make_dummy_out():
+    while True:
+        yield
+
+
 class QueryError(RuntimeError):
     pass
 
@@ -140,13 +149,14 @@ class PassiveSession(object):
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
 
+        stdout_list = []
+        stderr_list = []
+
         def make_stdin():
             yield f'{query_text}\n'.encode()
 
             if gen_in is not None:
                 yield from gen_in
-
-        stdout_list = []
 
         def make_stdout():
             if gen_out is None:
@@ -154,8 +164,6 @@ class PassiveSession(object):
                     stdout_list.append((yield))
             else:
                 yield from gen_out
-
-        stderr_list = []
 
         def make_stderr():
             while True:
@@ -255,8 +263,9 @@ class LocalSession(PassiveSession):
     def get_pid(
         self
     ):
+        pid_path = self._path.joinpath('pid')
+
         try:
-            pid_path = self._path.joinpath('pid')
             pid = int(open(pid_path, 'r').read().strip())
         except FileNotFoundError:
             return
@@ -280,15 +289,6 @@ class LocalSession(PassiveSession):
 
         if pid is not None:
             return
-
-        def make_stdin():
-            yield from ()
-
-        def make_stdout():
-            yield
-
-        def make_stderr():
-            yield
 
         pid_path = self._path.joinpath('pid')
         tmp_path = self._path.joinpath('tmp')
@@ -321,9 +321,9 @@ class LocalSession(PassiveSession):
                     for key, value in self._config.items()
                 )
             ],
-            make_stdin(),
-            make_stdout(),
-            make_stderr()
+            _make_dummy_in(),
+            _make_dummy_out(),
+            _make_dummy_out()
         )():
             raise ServiceError(self._host)
 
