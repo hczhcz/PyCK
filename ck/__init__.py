@@ -244,7 +244,6 @@ class LocalSession(PassiveSession):
         )
 
         self._path = pathlib.Path(path)
-        self._pid_path = self._path.joinpath('pid')
         self._config = config
 
         if stop:
@@ -257,7 +256,8 @@ class LocalSession(PassiveSession):
         self
     ):
         try:
-            pid = int(open(self._pid_path, 'r').read().strip())
+            pid_path = self._path.joinpath('pid')
+            pid = int(open(pid_path, 'r').read().strip())
         except FileNotFoundError:
             return
 
@@ -285,17 +285,12 @@ class LocalSession(PassiveSession):
             yield from ()
 
         def make_stdout():
-            # yield from ()
-            while True:
-                data = yield
-                print(data)
+            yield
 
         def make_stderr():
-            # yield from ()
-            while True:
-                data = yield
-                print(data)
+            yield
 
+        pid_path = self._path.joinpath('pid')
         tmp_path = self._path.joinpath('tmp')
         format_schema_path = self._path.joinpath('format_schema')
         user_files_path = self._path.joinpath('user_files')
@@ -309,7 +304,7 @@ class LocalSession(PassiveSession):
                 'server',
                 '--daemon',
                 f'--config-file={_config_path}',
-                f'--pid-file={self._pid_path}',
+                f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',
                 f'--http_port={self._http_port}',
