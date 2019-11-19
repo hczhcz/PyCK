@@ -10,7 +10,7 @@ _dir_path = pathlib.Path(__file__).parent
 _ck_path = _dir_path.joinpath('clickhouse')
 
 
-class CKError(RuntimeError):
+class QueryError(RuntimeError):
     pass
 
 
@@ -74,10 +74,8 @@ class PassiveSession(object):
                 [
                     str(_ck_path),
                     'client',
-                    '--host',
-                    self._host,
-                    '--port',
-                    str(self._tcp_port),
+                    f'--host={self._host}',
+                    f'--port={self._tcp_port}',
                 ],
                 gen_stdin,
                 gen_stdout,
@@ -107,8 +105,7 @@ class PassiveSession(object):
                     ),
                     str(_ck_path),
                     'client',
-                    '--port',
-                    str(self._tcp_port),
+                    f'--port={self._tcp_port}',
                 ],
                 gen_stdin,
                 gen_stdout,
@@ -124,14 +121,14 @@ class PassiveSession(object):
     def query(
         self,
         query_text,
-        use_async=False,
         method='http',
+        use_async=False,
         gen_in=None,
         gen_out=None
     ):
         assert type(query_text) is str
-        assert type(use_async) is bool
         assert method in {'tcp', 'http', 'ssh'}
+        assert type(use_async) is bool
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
 
@@ -165,7 +162,7 @@ class PassiveSession(object):
 
         def join():
             if not join_raw():
-                raise CKError(
+                raise QueryError(
                     self._host,
                     query_text,
                     b''.join(stderr_list).decode()
@@ -189,5 +186,5 @@ class PassiveSession(object):
             return self.query('select 42', method=method) == b'42\n'
         except ConnectionError:
             return False
-        except CKError:
+        except QueryError:
             return False
