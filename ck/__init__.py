@@ -210,7 +210,8 @@ class LocalSession(PassiveSession):
         ssh_command_prefix=None,
         path=str(pathlib.Path().cwd().joinpath('data')),
         config={'listen_host': '0.0.0.0'},
-        stop_signal=None,
+        stop=False,
+        start=True,
         ping_interval=0.1,
         ping_retry=100
     ):
@@ -226,7 +227,8 @@ class LocalSession(PassiveSession):
         for key, value in config.items():
             assert type(key) is str
             assert type(value) is str
-        assert stop_signal is None or type(stop_signal) is int
+        assert type(stop) is bool
+        assert type(start) is bool
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
 
@@ -245,10 +247,11 @@ class LocalSession(PassiveSession):
         self._pid_path = self._path.joinpath('pid')
         self._config = config
 
-        if stop_signal is not None:
-            self.stop(stop_signal, ping_interval, ping_retry)
+        if stop:
+            self.stop(ping_interval, ping_retry)
 
-        self.start(ping_interval, ping_retry)
+        if start:
+            self.start(ping_interval, ping_retry)
 
     def get_pid(
         self
@@ -349,11 +352,9 @@ class LocalSession(PassiveSession):
 
     def stop(
         self,
-        signal=15,
         ping_interval=0.1,
         ping_retry=100
     ):
-        assert type(signal) is int
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
 
@@ -362,7 +363,7 @@ class LocalSession(PassiveSession):
         if pid is None:
             return
 
-        os.kill(pid, signal)
+        os.kill(pid, 15)
 
         for i in range(ping_retry):
             if self.get_pid() is None:
