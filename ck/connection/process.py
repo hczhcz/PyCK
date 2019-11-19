@@ -86,11 +86,11 @@ def run(
             stdout_thread.join(join_interval)
             stderr_thread.join(join_interval)
 
-        if error is None:
-            return process.wait()
+        if error is not None:
+            process.kill()
 
-        process.kill()
+            raise error
 
-        raise error
+        return process.wait()
 
     return join

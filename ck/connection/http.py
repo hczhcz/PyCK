@@ -65,12 +65,12 @@ def run(
         while error is None and thread.is_alive():
             thread.join(join_interval)
 
-        if error is None:
-            return response.status
+        if error is not None:
+            if connection is not None:
+                connection.close()
 
-        if connection is not None:
-            connection.close()
+            raise error
 
-        raise error
+        return response.status
 
     return join

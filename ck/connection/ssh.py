@@ -106,11 +106,11 @@ def run(
             stdout_thread.join(join_interval)
             stderr_thread.join(join_interval)
 
-        if error is None:
-            return channel.recv_exit_status()
+        if error is not None:
+            channel.close()
 
-        channel.close()
+            raise error
 
-        raise error
+        return channel.recv_exit_status()
 
     return join
