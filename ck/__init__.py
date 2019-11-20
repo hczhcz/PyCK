@@ -3,17 +3,12 @@ import pathlib
 import time
 import types
 
+from ck import clickhouse
 from ck import exception
 from ck import generator
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
-
-
-_dir_path = pathlib.Path(__file__).parent
-_ck_path = _dir_path.joinpath('clickhouse')
-_config_path = _dir_path.joinpath('config.xml')
-_users_path = _dir_path.joinpath('users.xml')
 
 
 class PassiveSession(object):
@@ -81,7 +76,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    str(_ck_path),
+                    str(clickhouse.binary_path),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -121,7 +116,7 @@ class PassiveSession(object):
                         if self._ssh_command_prefix is None
                         else [self._ssh_command_prefix]
                     ),
-                    str(_ck_path),
+                    str(clickhouse.binary_path),
                     'client',
                     f'--port={self._tcp_port}',
                     *(
@@ -311,15 +306,15 @@ class LocalSession(PassiveSession):
 
         if process.run(
             [
-                str(_ck_path),
+                str(clickhouse.binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={_config_path}',
+                f'--config-file={clickhouse.config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',
                 f'--http_port={self._http_port}',
-                f'--users_config={_users_path}',
+                f'--users_config={clickhouse.users_path}',
                 f'--path={self._path}',
                 f'--tmp_path={tmp_path}',
                 f'--format_schema_path={format_schema_path}',
@@ -512,15 +507,15 @@ class RemoteSession(PassiveSession):
                     if self._ssh_command_prefix is None
                     else [self._ssh_command_prefix]
                 ),
-                str(_ck_path),
+                str(clickhouse.binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={_config_path}',
+                f'--config-file={clickhouse.config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',
                 f'--http_port={self._http_port}',
-                f'--users_config={_users_path}',
+                f'--users_config={clickhouse.users_path}',
                 f'--path={self._path}',
                 f'--tmp_path={tmp_path}',
                 f'--format_schema_path={format_schema_path}',
