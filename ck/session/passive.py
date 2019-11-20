@@ -4,7 +4,7 @@ import urllib.parse
 
 from ck import exception
 from ck import iteration
-from ck.clickhouse import binary
+from ck.clickhouse import lookup
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
@@ -55,6 +55,33 @@ class PassiveSession(object):
                 self._ssh_public_key
             )
 
+    def _lookup_via_ssh(
+        self
+    ):
+        self._connect_ssh()
+
+        stdout_list = []
+        stderr_list = []
+
+        if ssh.run(
+            self._ssh_client,
+            [
+                *self._ssh_command_prefix,
+                'python3',
+                '-m',
+                'ck.clickhouse.lookup',
+            ],
+            iteration.make_empty_in(),
+            iteration.make_collect_out(stdout_list),
+            iteration.make_collect_out(stderr_list)
+        )():
+            raise exception.ShellError(
+                self._host,
+                b''.join(stderr_list).decode()
+            )
+
+        return tuple(b''.join(stdout_list).decode().splitlines())
+
     def _run(
         self,
         method,
@@ -77,7 +104,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    str(binary.binary_path),
+                    str(lookup.binary_path()),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -102,13 +129,13 @@ class PassiveSession(object):
             )
             ok = 200
         elif method == 'ssh':
-            self._connect_ssh()
+            binary_path, _ = self._lookup_via_ssh()
 
             join_raw = ssh.run(
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
-                    str(binary.binary_path),
+                    binary_path,
                     'client',
                     f'--port={self._tcp_port}',
                     *(

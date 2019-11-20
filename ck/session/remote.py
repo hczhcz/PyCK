@@ -3,7 +3,7 @@ import time
 
 from ck import exception
 from ck import iteration
-from ck.clickhouse import binary
+from ck.clickhouse import lookup
 from ck.connection import ssh
 from ck.session import passive
 
@@ -117,6 +117,8 @@ class RemoteSession(passive.PassiveSession):
         if pid is not None:
             return
 
+        binary_path, config_path = self._lookup_via_ssh()
+
         pid_path = self._path.joinpath('pid')
         tmp_path = self._path.joinpath('tmp')
         format_schema_path = self._path.joinpath('format_schema')
@@ -129,10 +131,10 @@ class RemoteSession(passive.PassiveSession):
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
-                str(binary.binary_path),
+                str(binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={binary.config_path}',
+                f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',
