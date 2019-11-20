@@ -24,7 +24,7 @@ class RemoteSession(passive.PassiveSession):
         stop=False,
         start=True,
         ping_interval=0.1,
-        ping_retry=100
+        ping_retry=50
     ):
         assert type(host) is str
         assert type(tcp_port) is int
@@ -105,7 +105,7 @@ class RemoteSession(passive.PassiveSession):
     def start(
         self,
         ping_interval=0.1,
-        ping_retry=100
+        ping_retry=50
     ):
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
@@ -179,7 +179,7 @@ class RemoteSession(passive.PassiveSession):
     def stop(
         self,
         ping_interval=0.1,
-        ping_retry=100
+        ping_retry=50
     ):
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
