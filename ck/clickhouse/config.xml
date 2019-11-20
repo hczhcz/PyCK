@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<yandex>
+    <listen_host>0.0.0.0</listen_host>
+    <http_server_default_response>Ojbk.</http_server_default_response>
+
+    <query_log>
+        <database>system</database>
+        <table>query_log</table>
+    </query_log>
+
+    <mark_cache_size>5368709120</mark_cache_size>
+
+    <profiles>
+        <default>
+            <max_memory_usage_for_all_queries>48000000000</max_memory_usage_for_all_queries>
+            <max_memory_usage>40000000000</max_memory_usage>
+            <max_bytes_before_external_group_by>32000000000</max_bytes_before_external_group_by>
+            <max_bytes_before_external_sort>32000000000</max_bytes_before_external_sort>
+            <log_queries>1</log_queries>
+            <join_use_nulls>1</join_use_nulls>
+            <input_format_allow_errors_num>100</input_format_allow_errors_num>
+            <input_format_allow_errors_ratio>0.01</input_format_allow_errors_ratio>
+            <date_time_input_format>best_effort</date_time_input_format>
+        </default>
+    </profiles>
+
+    <users>
+        <default>
+            <password></password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+
+            <profile>default</profile>
+            <quota>default</quota>
+        </default>
+    </users>
+
+    <quotas>
+        <default>
+        </default>
+    </quotas>
+</yandex>

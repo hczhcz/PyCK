@@ -143,7 +143,6 @@ class RemoteSession(passive.PassiveSession):
                 f'--user_files_path={user_files_path}',
                 f'--logger.log={log_path}',
                 f'--logger.errorlog={errorlog_path}',
-                '--mark_cache_size=5368709120',
                 *(
                     f'--{key}={value}'
                     for key, value in self._config.items()
