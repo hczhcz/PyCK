@@ -139,7 +139,6 @@ class RemoteSession(passive.PassiveSession):
                 '--',
                 f'--tcp_port={self._tcp_port}',
                 f'--http_port={self._http_port}',
-                f'--users_config={clickhouse.users_path}',
                 f'--path={self._path}',
                 f'--tmp_path={tmp_path}',
                 f'--format_schema_path={format_schema_path}',
