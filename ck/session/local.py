@@ -19,7 +19,7 @@ class LocalSession(passive.PassiveSession):
         ssh_password=None,
         ssh_public_key=None,
         ssh_command_prefix=[],
-        path=str(pathlib.Path().cwd().joinpath('data')),
+        path=str(pathlib.Path().home().joinpath('.ck_data')),
         config={'listen_host': '0.0.0.0'},
         stop=False,
         start=True,
