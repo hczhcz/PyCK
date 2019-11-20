@@ -19,7 +19,7 @@ class RemoteSession(passive.PassiveSession):
         ssh_password=None,
         ssh_public_key=None,
         ssh_command_prefix=[],
-        path=str(pathlib.Path().home().joinpath('.ck_data')),
+        path=None,
         config={'listen_host': '0.0.0.0'},
         stop=False,
         start=True,
@@ -36,7 +36,7 @@ class RemoteSession(passive.PassiveSession):
         assert type(ssh_command_prefix) is list
         for arg in ssh_command_prefix:
             assert type(arg) is str
-        assert type(path) is str
+        assert path is None or type(path) is str
         assert type(config) is dict
         for key, value in config.items():
             assert type(key) is str
@@ -57,7 +57,13 @@ class RemoteSession(passive.PassiveSession):
             ssh_command_prefix
         )
 
-        self._path = pathlib.Path(path)
+        self._connect_ssh()
+
+        if path is None:
+            self._path = pathlib.Path(self._ssh_default_data_path)
+        else:
+            self._path = pathlib.Path(path)
+
         self._config = config
 
         if stop:
@@ -72,8 +78,6 @@ class RemoteSession(passive.PassiveSession):
         pid_path = self._path.joinpath('pid')
 
         stdout_list = []
-
-        self._connect_ssh()
 
         if ssh.run(
             self._ssh_client,
@@ -135,8 +139,6 @@ class RemoteSession(passive.PassiveSession):
                 b''.join(stderr_list).decode()
             )
 
-        binary_path, config_path = self._lookup_via_ssh()
-
         pid_path = self._path.joinpath('pid')
         tmp_path = self._path.joinpath('tmp')
         format_schema_path = self._path.joinpath('format_schema')
@@ -149,10 +151,10 @@ class RemoteSession(passive.PassiveSession):
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
-                str(binary_path),
+                str(self._ssh_binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={config_path}',
+                f'--config-file={self._ssh_config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',

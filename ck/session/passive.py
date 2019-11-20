@@ -42,6 +42,9 @@ class PassiveSession(object):
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix
         self._ssh_client = None
+        self._ssh_default_data_path = None
+        self._ssh_binary_path = None
+        self._ssh_config_path = None
 
     def _connect_ssh(
         self
@@ -54,11 +57,6 @@ class PassiveSession(object):
                 self._ssh_password,
                 self._ssh_public_key
             )
-
-    def _lookup_via_ssh(
-        self
-    ):
-        self._connect_ssh()
 
         stdout_list = []
         stderr_list = []
@@ -80,7 +78,11 @@ class PassiveSession(object):
                 b''.join(stderr_list).decode()
             )
 
-        return tuple(b''.join(stdout_list).decode().splitlines())
+        (
+            self._ssh_default_data_path,
+            self._ssh_binary_path,
+            self._ssh_config_path,
+        ) = b''.join(stdout_list).decode().splitlines()
 
     def _run(
         self,
@@ -104,7 +106,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    str(lookup.binary_path()),
+                    lookup.binary_path(),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -129,13 +131,13 @@ class PassiveSession(object):
             )
             ok = 200
         elif method == 'ssh':
-            binary_path, _ = self._lookup_via_ssh()
+            self._connect_ssh()
 
             join_raw = ssh.run(
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
-                    binary_path,
+                    self._ssh_binary_path,
                     'client',
                     f'--port={self._tcp_port}',
                     *(

@@ -19,7 +19,7 @@ class LocalSession(passive.PassiveSession):
         ssh_password=None,
         ssh_public_key=None,
         ssh_command_prefix=[],
-        path=str(pathlib.Path().home().joinpath('.ck_data')),
+        path=None,
         config={'listen_host': '0.0.0.0'},
         stop=False,
         start=True,
@@ -35,7 +35,7 @@ class LocalSession(passive.PassiveSession):
         assert type(ssh_command_prefix) is list
         for arg in ssh_command_prefix:
             assert type(arg) is str
-        assert type(path) is str
+        assert path is None or type(path) is str
         assert type(config) is dict
         for key, value in config.items():
             assert type(key) is str
@@ -56,7 +56,11 @@ class LocalSession(passive.PassiveSession):
             ssh_command_prefix
         )
 
-        self._path = pathlib.Path(path)
+        if path is None:
+            self._path = pathlib.Path(lookup.default_data_path())
+        else:
+            self._path = pathlib.Path(path)
+
         self._config = config
 
         if stop:
@@ -71,7 +75,7 @@ class LocalSession(passive.PassiveSession):
         pid_path = self._path.joinpath('pid')
 
         try:
-            pid_text, = open(pid_path, 'r').read().splitlines()
+            pid_text, = pid_path.open().read().splitlines()
         except FileNotFoundError:
             return
 
