@@ -1,8 +1,9 @@
+import itertools
 import types
 
 from ck import clickhouse
 from ck import exception
-from ck import generator
+from ck import iteration
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
@@ -154,21 +155,24 @@ class PassiveSession(object):
         stdout_list = []
         stderr_list = []
 
-        def make_stdin():
-            yield f'{query_text}\n'.encode()
+        if gen_in is None:
+            gen_stdin = iteration.make_given_in(f'{query_text}\n'.encode())
+        else:
+            gen_stdin = itertools.chain(
+                iteration.make_given_in(f'{query_text}\n'.encode()),
+                gen_in
+            )
 
-            if gen_in is not None:
-                yield from gen_in
+        if gen_out is None:
+            gen_stdout = iteration.make_collect_out(stdout_list)
+        else:
+            gen_stdout = gen_out
 
         join_raw = self._run(
             method,
-            make_stdin(),
-            (
-                generator.make_collect_out(stdout_list)
-                if gen_out is None
-                else gen_out
-            ),
-            generator.make_collect_out(stderr_list),
+            gen_stdin,
+            gen_stdout,
+            iteration.make_collect_out(stderr_list),
             settings
         )
 

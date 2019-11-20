@@ -3,7 +3,7 @@ import time
 
 from ck import clickhouse
 from ck import exception
-from ck import generator
+from ck import iteration
 from ck.connection import ssh
 from ck.session import passive
 
@@ -79,9 +79,9 @@ class RemoteSession(passive.PassiveSession):
                 'cat',
                 str(pid_path),
             ],
-            generator.make_empty_in(),
-            generator.make_collect_out(stdout_list),
-            generator.make_ignore_out()
+            iteration.make_empty_in(),
+            iteration.make_collect_out(stdout_list),
+            iteration.make_ignore_out()
         )():
             return
 
@@ -94,9 +94,9 @@ class RemoteSession(passive.PassiveSession):
                 '-0',
                 str(pid),
             ],
-            generator.make_empty_in(),
-            generator.make_empty_out(),
-            generator.make_ignore_out()
+            iteration.make_empty_in(),
+            iteration.make_empty_out(),
+            iteration.make_ignore_out()
         )():
             return
 
@@ -152,9 +152,9 @@ class RemoteSession(passive.PassiveSession):
                     for key, value in self._config.items()
                 ),
             ],
-            generator.make_empty_in(),
-            generator.make_empty_out(),
-            generator.make_empty_out()
+            iteration.make_empty_in(),
+            iteration.make_empty_out(),
+            iteration.make_empty_out()
         )():
             raise exception.ServiceError(self._host)
 
@@ -196,9 +196,9 @@ class RemoteSession(passive.PassiveSession):
                 '-15',
                 str(pid),
             ],
-            generator.make_empty_in(),
-            generator.make_empty_out(),
-            generator.make_ignore_out()
+            iteration.make_empty_in(),
+            iteration.make_empty_out(),
+            iteration.make_ignore_out()
         )():
             raise exception.ServiceError(self._host)
 
@@ -215,9 +215,9 @@ class RemoteSession(passive.PassiveSession):
                     '-9',
                     str(pid),
                 ],
-                generator.make_empty_in(),
-                generator.make_empty_out(),
-                generator.make_ignore_out()
+                iteration.make_empty_in(),
+                iteration.make_empty_out(),
+                iteration.make_ignore_out()
             )():
                 raise exception.ServiceError(self._host)
 

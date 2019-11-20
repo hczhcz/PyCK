@@ -4,7 +4,7 @@ import time
 
 from ck import clickhouse
 from ck import exception
-from ck import generator
+from ck import iteration
 from ck.connection import process
 from ck.session import passive
 
@@ -124,9 +124,9 @@ class LocalSession(passive.PassiveSession):
                     for key, value in self._config.items()
                 ),
             ],
-            generator.make_empty_in(),
-            generator.make_empty_out(),
-            generator.make_empty_out()
+            iteration.make_empty_in(),
+            iteration.make_empty_out(),
+            iteration.make_empty_out()
         )():
             raise exception.ServiceError(self._host)
 
