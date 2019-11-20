@@ -117,6 +117,24 @@ class RemoteSession(passive.PassiveSession):
         if pid is not None:
             return
 
+        stderr_list = []
+
+        if ssh.run(
+            self._ssh_client,
+            [
+                'mkdir',
+                '--parents',
+                str(self._path),
+            ],
+            iteration.make_empty_in(),
+            iteration.make_empty_out(),
+            iteration.make_collect_out(stderr_list)
+        )():
+            raise exception.ShellError(
+                self._host,
+                b''.join(stderr_list).decode()
+            )
+
         binary_path, config_path = self._lookup_via_ssh()
 
         pid_path = self._path.joinpath('pid')

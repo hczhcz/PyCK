@@ -71,9 +71,11 @@ class LocalSession(passive.PassiveSession):
         pid_path = self._path.joinpath('pid')
 
         try:
-            pid = int(open(pid_path, 'r').read().strip())
+            pid_text, = open(pid_path, 'r').read().splitlines()
         except FileNotFoundError:
             return
+
+        pid = int(pid_text)
 
         try:
             os.kill(pid, 0)
@@ -94,6 +96,8 @@ class LocalSession(passive.PassiveSession):
 
         if pid is not None:
             return
+
+        self._path.mkdir(parents=True, exist_ok=True)
 
         pid_path = self._path.joinpath('pid')
         tmp_path = self._path.joinpath('tmp')
