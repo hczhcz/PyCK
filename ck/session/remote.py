@@ -18,7 +18,7 @@ class RemoteSession(passive.PassiveSession):
         ssh_username=None,
         ssh_password=None,
         ssh_public_key=None,
-        ssh_command_prefix=None,
+        ssh_command_prefix=[],
         path=str(pathlib.Path().cwd().joinpath('data')),
         config={'listen_host': '0.0.0.0'},
         stop=False,
@@ -33,7 +33,9 @@ class RemoteSession(passive.PassiveSession):
         assert ssh_username is None or type(ssh_username) is str
         assert ssh_password is None or type(ssh_password) is str
         assert ssh_public_key is None or type(ssh_public_key) is str
-        assert ssh_command_prefix is None or type(ssh_command_prefix) is str
+        assert type(ssh_command_prefix) is list
+        for arg in ssh_command_prefix:
+            assert type(arg) is str
         assert type(path) is str
         assert type(config) is dict
         for key, value in config.items():
@@ -126,11 +128,7 @@ class RemoteSession(passive.PassiveSession):
         if ssh.run(
             self._ssh_client,
             [
-                *(
-                    []
-                    if self._ssh_command_prefix is None
-                    else [self._ssh_command_prefix]
-                ),
+                *self._ssh_command_prefix,
                 str(clickhouse.binary_path),
                 'server',
                 '--daemon',
