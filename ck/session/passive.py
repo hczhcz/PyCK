@@ -2,9 +2,9 @@ import itertools
 import types
 import urllib.parse
 
-from ck import clickhouse
 from ck import exception
 from ck import iteration
+from ck.clickhouse import binary
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
@@ -77,7 +77,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    str(clickhouse.binary_path),
+                    str(binary.binary_path),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -108,7 +108,7 @@ class PassiveSession(object):
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
-                    str(clickhouse.binary_path),
+                    str(binary.binary_path),
                     'client',
                     f'--port={self._tcp_port}',
                     *(

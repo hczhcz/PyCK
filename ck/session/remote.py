@@ -1,9 +1,9 @@
 import pathlib
 import time
 
-from ck import clickhouse
 from ck import exception
 from ck import iteration
+from ck.clickhouse import binary
 from ck.connection import ssh
 from ck.session import passive
 
@@ -129,10 +129,10 @@ class RemoteSession(passive.PassiveSession):
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
-                str(clickhouse.binary_path),
+                str(binary.binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={clickhouse.config_path}',
+                f'--config-file={binary.config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',

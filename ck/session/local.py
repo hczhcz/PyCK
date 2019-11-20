@@ -2,9 +2,9 @@ import os
 import pathlib
 import time
 
-from ck import clickhouse
 from ck import exception
 from ck import iteration
+from ck.clickhouse import binary
 from ck.connection import process
 from ck.session import passive
 
@@ -105,10 +105,10 @@ class LocalSession(passive.PassiveSession):
 
         if process.run(
             [
-                str(clickhouse.binary_path),
+                str(binary.binary_path),
                 'server',
                 '--daemon',
-                f'--config-file={clickhouse.config_path}',
+                f'--config-file={binary.config_path}',
                 f'--pid-file={pid_path}',
                 '--',
                 f'--tcp_port={self._tcp_port}',

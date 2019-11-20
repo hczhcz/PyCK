@@ -1,7 +1,3 @@
-from ck.session import local
-from ck.session import passive
-from ck.session import remote
-
-PassiveSession = passive.PassiveSession
-LocalSession = local.LocalSession
-RemoteSession = remote.RemoteSession
+from ck.session.local import LocalSession
+from ck.session.passive import PassiveSession
+from ck.session.remote import RemoteSession
