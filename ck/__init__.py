@@ -3,6 +3,8 @@ import pathlib
 import time
 import types
 
+from ck import exception
+from ck import generator
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
@@ -12,23 +14,6 @@ _dir_path = pathlib.Path(__file__).parent
 _ck_path = _dir_path.joinpath('clickhouse')
 _config_path = _dir_path.joinpath('config.xml')
 _users_path = _dir_path.joinpath('users.xml')
-
-
-def _make_dummy_in():
-    yield from ()
-
-
-def _make_dummy_out():
-    while True:
-        yield
-
-
-class QueryError(RuntimeError):
-    pass
-
-
-class ServiceError(RuntimeError):
-    pass
 
 
 class PassiveSession(object):
@@ -204,7 +189,7 @@ class PassiveSession(object):
 
         def join():
             if not join_raw():
-                raise QueryError(
+                raise exception.QueryError(
                     self._host,
                     query_text,
                     b''.join(stderr_list).decode()
@@ -228,7 +213,7 @@ class PassiveSession(object):
             return self.query('select 42', method=method) == b'42\n'
         except ConnectionError:
             return False
-        except QueryError:
+        except exception.QueryError:
             return False
 
 
@@ -347,11 +332,11 @@ class LocalSession(PassiveSession):
                     for key, value in self._config.items()
                 ),
             ],
-            _make_dummy_in(),
-            _make_dummy_out(),
-            _make_dummy_out()
+            generator.make_empty_in(),
+            generator.make_empty_out(),
+            generator.make_empty_out()
         )():
-            raise ServiceError(self._host)
+            raise exception.ServiceError(self._host)
 
         for i in range(ping_retry):
             pid = self.get_pid()
@@ -361,13 +346,13 @@ class LocalSession(PassiveSession):
 
             time.sleep(ping_interval)
         else:
-            raise ServiceError(self._host)
+            raise exception.ServiceError(self._host)
 
         while not self.ping():
             time.sleep(ping_interval)
 
             if self.get_pid() is None:
-                raise ServiceError(self._host)
+                raise exception.ServiceError(self._host)
 
         return pid
 
@@ -475,9 +460,9 @@ class RemoteSession(PassiveSession):
                 'cat',
                 str(pid_path),
             ],
-            _make_dummy_in(),
+            generator.make_empty_in(),
             make_stdout(),
-            _make_dummy_out()
+            generator.make_ignore_out()
         )():
             return
 
@@ -490,9 +475,9 @@ class RemoteSession(PassiveSession):
                 '-0',
                 str(pid),
             ],
-            _make_dummy_in(),
-            _make_dummy_out(),
-            _make_dummy_out()
+            generator.make_empty_in(),
+            generator.make_empty_out(),
+            generator.make_ignore_out()
         )():
             return
 
@@ -548,11 +533,11 @@ class RemoteSession(PassiveSession):
                     for key, value in self._config.items()
                 ),
             ],
-            _make_dummy_in(),
-            _make_dummy_out(),
-            _make_dummy_out()
+            generator.make_empty_in(),
+            generator.make_empty_out(),
+            generator.make_empty_out()
         )():
-            raise ServiceError(self._host)
+            raise exception.ServiceError(self._host)
 
         for i in range(ping_retry):
             pid = self.get_pid()
@@ -562,13 +547,13 @@ class RemoteSession(PassiveSession):
 
             time.sleep(ping_interval)
         else:
-            raise ServiceError(self._host)
+            raise exception.ServiceError(self._host)
 
         while not self.ping():
             time.sleep(ping_interval)
 
             if self.get_pid() is None:
-                raise ServiceError(self._host)
+                raise exception.ServiceError(self._host)
 
         return pid
 
@@ -592,11 +577,11 @@ class RemoteSession(PassiveSession):
                 '-15',
                 str(pid),
             ],
-            _make_dummy_in(),
-            _make_dummy_out(),
-            _make_dummy_out()
+            generator.make_empty_in(),
+            generator.make_empty_out(),
+            generator.make_ignore_out()
         )():
-            raise ServiceError(self._host)
+            raise exception.ServiceError(self._host)
 
         for i in range(ping_retry):
             if self.get_pid() is None:
@@ -611,11 +596,11 @@ class RemoteSession(PassiveSession):
                     '-9',
                     str(pid),
                 ],
-                _make_dummy_in(),
-                _make_dummy_out(),
-                _make_dummy_out()
+                generator.make_empty_in(),
+                generator.make_empty_out(),
+                generator.make_ignore_out()
             )():
-                raise ServiceError(self._host)
+                raise exception.ServiceError(self._host)
 
             while self.get_pid() is None:
                 time.sleep(ping_interval)
