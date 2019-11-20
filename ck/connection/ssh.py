@@ -1,4 +1,5 @@
 import paramiko
+import shlex
 import threading
 import types
 
@@ -44,8 +45,10 @@ def run(
     assert type(join_interval) is int or type(join_interval) is float
 
     channel = client.get_transport().open_session()
-    # TODO: is it okay to use string.join?
-    channel.exec_command(' '.join(args))
+    channel.exec_command(' '.join(
+        shlex.quote(arg)
+        for arg in args
+    ))
 
     error = None
 

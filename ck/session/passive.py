@@ -1,5 +1,6 @@
 import itertools
 import types
+import urllib.parse
 
 from ck import clickhouse
 from ck import exception
@@ -89,15 +90,10 @@ class PassiveSession(object):
             )
             ok = 0
         elif method == 'http':
-            arg_text = '&'.join(
-                f'{key}={value}'
-                for key, value in settings.items()
-            )
-
             join_raw = http.run(
                 self._host,
                 self._http_port,
-                f'/?{arg_text}',
+                f'/?{urllib.parse.urlencode(settings)}',
                 gen_stdin,
                 gen_stdout,
                 gen_stderr
