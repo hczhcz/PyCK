@@ -128,7 +128,7 @@ class LocalSession(passive.PassiveSession):
             iteration.make_empty_out(),
             iteration.make_empty_out()
         )():
-            raise exception.ServiceError(self._host)
+            raise exception.ServiceError(self._host, 'daemon')
 
         for i in range(ping_retry):
             pid = self.get_pid()
@@ -138,13 +138,13 @@ class LocalSession(passive.PassiveSession):
 
             time.sleep(ping_interval)
         else:
-            raise exception.ServiceError(self._host)
+            raise exception.ServiceError(self._host, 'pid')
 
         while not self.ping():
             time.sleep(ping_interval)
 
             if self.get_pid() is None:
-                raise exception.ServiceError(self._host)
+                raise exception.ServiceError(self._host, f'pid_{pid}')
 
         return pid
 
