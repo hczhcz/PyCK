@@ -32,7 +32,7 @@ def run(
 
             yield data
 
-    def make_request():
+    def post_request():
         nonlocal connection
         nonlocal response
         nonlocal error
@@ -57,7 +57,7 @@ def run(
         except Exception as e:
             error = e
 
-    thread = threading.Thread(target=make_request)
+    thread = threading.Thread(target=post_request)
 
     thread.start()
 
