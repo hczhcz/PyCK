@@ -5,6 +5,7 @@ import time
 from ck import exception
 from ck import iteration
 from ck.clickhouse import lookup
+from ck.clickhouse import setup
 from ck.connection import process
 from ck.session import passive
 
@@ -19,8 +20,8 @@ class LocalSession(passive.PassiveSession):
         ssh_password=None,
         ssh_public_key=None,
         ssh_command_prefix=[],
-        path=None,
-        config={'listen_host': '0.0.0.0'},
+        data_dir=None,
+        config={},
         stop=False,
         start=True,
         ping_interval=0.1,
@@ -35,11 +36,9 @@ class LocalSession(passive.PassiveSession):
         assert type(ssh_command_prefix) is list
         for arg in ssh_command_prefix:
             assert type(arg) is str
-        assert path is None or type(path) is str
+        assert data_dir is None or type(data_dir) is str
+        # notice: recursive type checking
         assert type(config) is dict
-        for key, value in config.items():
-            assert type(key) is str
-            assert type(value) is str
         assert type(stop) is bool
         assert type(start) is bool
         assert type(ping_interval) is int or type(ping_interval) is float
@@ -56,10 +55,10 @@ class LocalSession(passive.PassiveSession):
             ssh_command_prefix
         )
 
-        if path is None:
-            self._path = pathlib.Path(lookup.default_data_path())
+        if data_dir is None:
+            self._path = pathlib.Path(lookup.default_data_dir())
         else:
-            self._path = pathlib.Path(path)
+            self._path = pathlib.Path(data_dir)
 
         self._config = config
 
@@ -101,42 +100,39 @@ class LocalSession(passive.PassiveSession):
         if pid is not None:
             return
 
+        config_path = self._path.joinpath('config.xml')
+        pid_path = self._path.joinpath('pid')
+
+        # create dir
+
         self._path.mkdir(parents=True, exist_ok=True)
 
-        pid_path = self._path.joinpath('pid')
-        tmp_path = self._path.joinpath('tmp')
-        format_schema_path = self._path.joinpath('format_schema')
-        user_files_path = self._path.joinpath('user_files')
-        # notice: log_path and errorlog_path does not work
-        log_path = self._path.joinpath('log')
-        errorlog_path = self._path.joinpath('errorlog')
+        # setup
+
+        setup.create_config(
+            self._tcp_port,
+            self._http_port,
+            str(self._path),
+            self._config
+        )
+
+        # run
 
         if process.run(
             [
-                str(lookup.binary_path()),
+                lookup.binary_file(),
                 'server',
                 '--daemon',
-                f'--config-file={lookup.config_path()}',
+                f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
-                '--',
-                f'--tcp_port={self._tcp_port}',
-                f'--http_port={self._http_port}',
-                f'--path={self._path}',
-                f'--tmp_path={tmp_path}',
-                f'--format_schema_path={format_schema_path}',
-                f'--user_files_path={user_files_path}',
-                f'--logger.log={log_path}',
-                f'--logger.errorlog={errorlog_path}',
-                *(
-                    f'--{key}={value}'
-                    for key, value in self._config.items()
-                ),
             ],
             iteration.make_empty_in(),
             iteration.make_empty_out(),
             iteration.make_empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
+
+        # wait for server initialization
 
         for i in range(ping_retry):
             pid = self.get_pid()
