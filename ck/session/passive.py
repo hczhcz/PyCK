@@ -42,9 +42,8 @@ class PassiveSession(object):
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix
         self._ssh_client = None
-        self._ssh_default_data_path = None
-        self._ssh_binary_path = None
-        self._ssh_config_path = None
+        self._ssh_default_data_dir = None
+        self._ssh_binary_file = None
 
     def _connect_ssh(
         self
@@ -79,9 +78,8 @@ class PassiveSession(object):
             )
 
         (
-            self._ssh_default_data_path,
-            self._ssh_binary_path,
-            self._ssh_config_path,
+            self._ssh_default_data_dir,
+            self._ssh_binary_file,
         ) = b''.join(stdout_list).decode().splitlines()
 
     def _run(
@@ -106,7 +104,7 @@ class PassiveSession(object):
         if method == 'tcp':
             join_raw = process.run(
                 [
-                    lookup.binary_path(),
+                    lookup.binary_file(),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -137,7 +135,7 @@ class PassiveSession(object):
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
-                    self._ssh_binary_path,
+                    self._ssh_binary_file,
                     'client',
                     f'--port={self._tcp_port}',
                     *(

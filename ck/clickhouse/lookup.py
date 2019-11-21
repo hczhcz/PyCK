@@ -1,19 +1,14 @@
 import pathlib
 
 
-def default_data_path():
+def default_data_dir():
     return str(pathlib.Path.home().joinpath('.ck_data'))
 
 
-def binary_path():
+def binary_file():
     return str(pathlib.Path(__file__).parent.joinpath('clickhouse'))
 
 
-def config_path():
-    return str(pathlib.Path(__file__).parent.joinpath('config.xml'))
-
-
 if __name__ == '__main__':
-    print(default_data_path())
-    print(binary_path())
-    print(config_path())
+    print(default_data_dir())
+    print(binary_file())
