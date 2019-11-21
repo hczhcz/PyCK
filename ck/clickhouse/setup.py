@@ -81,7 +81,7 @@ def create_config(
     profile = data['profiles']['default']
 
     if 'max_memory_usage_for_all_queries' not in profile:
-        memory_limit = str(memory_bound_1)
+        profile['max_memory_usage_for_all_queries'] = str(memory_bound_1)
 
     if 'max_memory_usage' not in profile:
         profile['max_memory_usage'] = str(memory_bound_1)
