@@ -82,24 +82,44 @@ class PassiveSession(object):
             self._ssh_binary_file,
         ) = b''.join(stdout_list).decode().splitlines()
 
-    def _run(
+    def query(
         self,
-        method,
-        gen_stdin,
-        gen_stdout,
-        gen_stderr,
+        query_text,
+        method='http',
+        use_async=False,
+        gen_in=None,
+        gen_out=None,
         settings={}
     ):
+        assert type(query_text) is str
         assert method in {'tcp', 'http', 'ssh'}
-        assert type(gen_stdin) is types.GeneratorType
-        assert type(gen_stdout) is types.GeneratorType
-        assert type(gen_stderr) is types.GeneratorType
+        assert type(use_async) is bool
+        assert gen_in is None or type(gen_in) is types.GeneratorType
+        assert gen_out is None or type(gen_out) is types.GeneratorType
         assert type(settings) is dict
         for key, value in settings.items():
             assert type(key) is str
             assert type(value) is str
 
         # TODO: check setting keys
+
+        stdout_list = []
+        stderr_list = []
+
+        if gen_in is None:
+            gen_stdin = iteration.make_given_in(f'{query_text}\n'.encode())
+        else:
+            gen_stdin = itertools.chain(
+                iteration.make_given_in(f'{query_text}\n'.encode()),
+                gen_in
+            )
+
+        if gen_out is None:
+            gen_stdout = iteration.make_collect_out(stdout_list)
+        else:
+            gen_stdout = gen_out
+
+        gen_stderr = iteration.make_collect_out(stderr_list)
 
         if method == 'tcp':
             join_raw = process.run(
@@ -150,55 +170,7 @@ class PassiveSession(object):
             ok = 0
 
         def join():
-            return join_raw() == ok
-
-        return join
-
-    def query(
-        self,
-        query_text,
-        method='http',
-        use_async=False,
-        gen_in=None,
-        gen_out=None,
-        settings={}
-    ):
-        assert type(query_text) is str
-        assert method in {'tcp', 'http', 'ssh'}
-        assert type(use_async) is bool
-        assert gen_in is None or type(gen_in) is types.GeneratorType
-        assert gen_out is None or type(gen_out) is types.GeneratorType
-        assert type(settings) is dict
-        for key, value in settings.items():
-            assert type(key) is str
-            assert type(value) is str
-
-        stdout_list = []
-        stderr_list = []
-
-        if gen_in is None:
-            gen_stdin = iteration.make_given_in(f'{query_text}\n'.encode())
-        else:
-            gen_stdin = itertools.chain(
-                iteration.make_given_in(f'{query_text}\n'.encode()),
-                gen_in
-            )
-
-        if gen_out is None:
-            gen_stdout = iteration.make_collect_out(stdout_list)
-        else:
-            gen_stdout = gen_out
-
-        join_raw = self._run(
-            method,
-            gen_stdin,
-            gen_stdout,
-            iteration.make_collect_out(stderr_list),
-            settings
-        )
-
-        def join():
-            if not join_raw():
+            if join_raw() != ok:
                 raise exception.QueryError(
                     self._host,
                     query_text,
