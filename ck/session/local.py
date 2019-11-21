@@ -23,9 +23,7 @@ class LocalSession(passive.PassiveSession):
         data_dir=None,
         config={},
         stop=False,
-        start=True,
-        ping_interval=0.1,
-        ping_retry=50
+        start=True
     ):
         assert type(tcp_port) is int
         assert type(http_port) is int
@@ -41,8 +39,6 @@ class LocalSession(passive.PassiveSession):
         assert type(config) is dict
         assert type(stop) is bool
         assert type(start) is bool
-        assert type(ping_interval) is int or type(ping_interval) is float
-        assert type(ping_retry) is int
 
         super().__init__(
             'localhost',
@@ -63,10 +59,10 @@ class LocalSession(passive.PassiveSession):
         self._config = config
 
         if stop:
-            self.stop(ping_interval, ping_retry)
+            self.stop()
 
         if start:
-            self.start(ping_interval, ping_retry)
+            self.start()
 
     def get_pid(
         self

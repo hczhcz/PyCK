@@ -21,9 +21,7 @@ class RemoteSession(passive.PassiveSession):
         data_dir=None,
         config={},
         stop=False,
-        start=True,
-        ping_interval=0.1,
-        ping_retry=50
+        start=True
     ):
         assert type(host) is str
         assert type(tcp_port) is int
@@ -40,8 +38,6 @@ class RemoteSession(passive.PassiveSession):
         assert type(config) is dict
         assert type(stop) is bool
         assert type(start) is bool
-        assert type(ping_interval) is int or type(ping_interval) is float
-        assert type(ping_retry) is int
 
         super().__init__(
             host,
@@ -64,10 +60,10 @@ class RemoteSession(passive.PassiveSession):
         self._config = config
 
         if stop:
-            self.stop(ping_interval, ping_retry)
+            self.stop()
 
         if start:
-            self.start(ping_interval, ping_retry)
+            self.start()
 
     def get_pid(
         self
