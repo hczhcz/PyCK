@@ -48,6 +48,8 @@ class PassiveSession(object):
     def _connect_ssh(
         self
     ):
+        # connect
+
         if self._ssh_client is None:
             self._ssh_client = ssh.connect(
                 self._host,
@@ -56,6 +58,8 @@ class PassiveSession(object):
                 self._ssh_password,
                 self._ssh_public_key
             )
+
+        # lookup
 
         stdout_list = []
         stderr_list = []
@@ -96,12 +100,13 @@ class PassiveSession(object):
         assert type(use_async) is bool
         assert gen_in is None or type(gen_in) is types.GeneratorType
         assert gen_out is None or type(gen_out) is types.GeneratorType
+        # TODO: check setting keys
         assert type(settings) is dict
         for key, value in settings.items():
             assert type(key) is str
             assert type(value) is str
 
-        # TODO: check setting keys
+        # create connection(s)
 
         stdout_list = []
         stderr_list = []
@@ -168,6 +173,8 @@ class PassiveSession(object):
                 gen_stderr
             )
             ok = 0
+
+        # join connection(s)
 
         def join():
             if join_raw() != ok:

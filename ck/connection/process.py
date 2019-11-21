@@ -20,6 +20,10 @@ def run(
     assert type(buffer_size) is int
     assert type(join_interval) is int or type(join_interval) is float
 
+    error = None
+
+    # connect
+
     process = subprocess.Popen(
         args,
         stdin=subprocess.PIPE,
@@ -27,7 +31,7 @@ def run(
         stderr=subprocess.PIPE
     )
 
-    error = None
+    # create threads
 
     def send_stdin():
         nonlocal error
@@ -75,6 +79,8 @@ def run(
     stdin_thread.start()
     stdout_thread.start()
     stderr_thread.start()
+
+    # join threads
 
     def join():
         while error is None and (

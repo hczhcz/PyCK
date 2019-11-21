@@ -26,6 +26,8 @@ def run(
     response = None
     error = None
 
+    # create thread
+
     def make_stdin():
         for data in gen_stdin:
             assert type(data) is bytes
@@ -60,6 +62,8 @@ def run(
     thread = threading.Thread(target=post_request)
 
     thread.start()
+
+    # join thread
 
     def join():
         while error is None and thread.is_alive():

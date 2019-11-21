@@ -69,12 +69,16 @@ class LocalSession(passive.PassiveSession):
     ):
         pid_path = self._path.joinpath('pid')
 
+        # get pid
+
         try:
             pid_text, = pid_path.open().read().splitlines()
         except FileNotFoundError:
             return
 
         pid = int(pid_text)
+
+        # find process
 
         try:
             os.kill(pid, 0)
@@ -160,6 +164,8 @@ class LocalSession(passive.PassiveSession):
 
         if pid is None:
             return
+
+        # kill process
 
         os.kill(pid, 15)
 

@@ -70,6 +70,8 @@ class RemoteSession(passive.PassiveSession):
     ):
         pid_path = self._path.joinpath('pid')
 
+        # get pid
+
         stdout_list = []
 
         if ssh.run(
@@ -85,6 +87,8 @@ class RemoteSession(passive.PassiveSession):
             return
 
         pid = int(b''.join(stdout_list).decode().strip())
+
+        # find process
 
         if ssh.run(
             self._ssh_client,
@@ -213,6 +217,8 @@ class RemoteSession(passive.PassiveSession):
 
         if pid is None:
             return
+
+        # kill process
 
         stderr_list = []
 
