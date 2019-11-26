@@ -4,12 +4,7 @@ import pathlib
 import xml.etree.ElementTree
 
 
-def create_config(
-    tcp_port,
-    http_port,
-    data_dir,
-    config
-):
+def create_config(tcp_port, http_port, data_dir, config):
     assert type(tcp_port) is int
     assert type(http_port) is int
     assert type(data_dir) is str

@@ -44,9 +44,7 @@ class PassiveSession(object):
         self._ssh_default_data_dir = None
         self._ssh_binary_file = None
 
-    def _connect_ssh(
-        self
-    ):
+    def _connect_ssh(self):
         # connect
 
         if self._ssh_client is None:
@@ -191,10 +189,7 @@ class PassiveSession(object):
 
         return join()
 
-    def ping(
-        self,
-        method='http'
-    ):
+    def ping(self, method='http'):
         assert method in {'tcp', 'http', 'ssh'}
 
         try:

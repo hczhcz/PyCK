@@ -64,9 +64,7 @@ class LocalSession(passive.PassiveSession):
         if start:
             self.start()
 
-    def get_pid(
-        self
-    ):
+    def get_pid(self):
         pid_path = self._path.joinpath('pid')
 
         # get pid
@@ -87,11 +85,7 @@ class LocalSession(passive.PassiveSession):
 
         return pid
 
-    def start(
-        self,
-        ping_interval=0.1,
-        ping_retry=50
-    ):
+    def start(self, ping_interval=0.1, ping_retry=50):
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
 
@@ -152,11 +146,7 @@ class LocalSession(passive.PassiveSession):
 
         return pid
 
-    def stop(
-        self,
-        ping_interval=0.1,
-        ping_retry=50
-    ):
+    def stop(self, ping_interval=0.1, ping_retry=50):
         assert type(ping_interval) is int or type(ping_interval) is float
         assert type(ping_retry) is int
 
