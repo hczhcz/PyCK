@@ -69,9 +69,9 @@ class PassiveSession(object):
                 '-m',
                 'ck.clickhouse.lookup',
             ],
-            iteration.make_empty_in(),
-            iteration.make_collect_out(stdout_list),
-            iteration.make_collect_out(stderr_list)
+            iteration.empty_in(),
+            iteration.collect_out(stdout_list),
+            iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -109,19 +109,19 @@ class PassiveSession(object):
         stderr_list = []
 
         if gen_in is None:
-            gen_stdin = iteration.make_given_in(f'{query_text}\n'.encode())
+            gen_stdin = iteration.given_in(f'{query_text}\n'.encode())
         else:
-            gen_stdin = iteration.make_concat(
-                iteration.make_given_in(f'{query_text}\n'.encode()),
+            gen_stdin = iteration.concat(
+                iteration.given_in(f'{query_text}\n'.encode()),
                 gen_in
             )
 
         if gen_out is None:
-            gen_stdout = iteration.make_collect_out(stdout_list)
+            gen_stdout = iteration.collect_out(stdout_list)
         else:
             gen_stdout = gen_out
 
-        gen_stderr = iteration.make_collect_out(stderr_list)
+        gen_stderr = iteration.collect_out(stderr_list)
 
         if method == 'tcp':
             join_raw = process.run(

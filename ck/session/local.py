@@ -120,9 +120,9 @@ class LocalSession(passive.PassiveSession):
                 f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
             ],
-            iteration.make_empty_in(),
-            iteration.make_empty_out(),
-            iteration.make_empty_out()
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 
