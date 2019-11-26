@@ -1,4 +1,3 @@
-import itertools
 import types
 import urllib.parse
 
@@ -114,7 +113,7 @@ class PassiveSession(object):
         if gen_in is None:
             gen_stdin = iteration.make_given_in(f'{query_text}\n'.encode())
         else:
-            gen_stdin = itertools.chain(
+            gen_stdin = iteration.make_concat(
                 iteration.make_given_in(f'{query_text}\n'.encode()),
                 gen_in
             )
