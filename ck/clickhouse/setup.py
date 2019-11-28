@@ -21,8 +21,8 @@ def create_config(tcp_port, http_port, data_dir, config):
     config_path = path.joinpath('config.xml')
 
     memory_size = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
-    memory_bound_1 = int(0.8 * memory_size)
-    memory_bound_2 = int(0.75 * memory_size)
+    memory_bound_1 = int(0.6 * memory_size)
+    memory_bound_2 = int(0.5 * memory_size)
 
     data = config.copy()
 
