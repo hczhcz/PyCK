@@ -3,10 +3,10 @@ import pathlib
 import time
 
 from ck import exception
-from ck import iteration
 from ck.clickhouse import lookup
 from ck.clickhouse import setup
 from ck.connection import process
+from ck.iteration import adhoc
 from ck.session import passive
 
 
@@ -120,9 +120,9 @@ class LocalSession(passive.PassiveSession):
                 f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
             ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.empty_out()
+            adhoc.empty_in(),
+            adhoc.empty_out(),
+            adhoc.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 

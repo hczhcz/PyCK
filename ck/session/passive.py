@@ -2,11 +2,11 @@ import types
 import urllib.parse
 
 from ck import exception
-from ck import iteration
 from ck.clickhouse import lookup
 from ck.connection import http
 from ck.connection import process
 from ck.connection import ssh
+from ck.iteration import adhoc
 
 
 class PassiveSession(object):
@@ -69,9 +69,9 @@ class PassiveSession(object):
                 '-m',
                 'ck.clickhouse.lookup',
             ],
-            iteration.empty_in(),
-            iteration.collect_out(stdout_list),
-            iteration.collect_out(stderr_list)
+            adhoc.empty_in(),
+            adhoc.collect_out(stdout_list),
+            adhoc.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -109,19 +109,19 @@ class PassiveSession(object):
         stderr_list = []
 
         if gen_in is None:
-            gen_stdin = iteration.given_in(f'{query_text}\n'.encode())
+            gen_stdin = adhoc.given_in(f'{query_text}\n'.encode())
         else:
-            gen_stdin = iteration.concat(
-                iteration.given_in(f'{query_text}\n'.encode()),
+            gen_stdin = adhoc.concat(
+                adhoc.given_in(f'{query_text}\n'.encode()),
                 gen_in
             )
 
         if gen_out is None:
-            gen_stdout = iteration.collect_out(stdout_list)
+            gen_stdout = adhoc.collect_out(stdout_list)
         else:
             gen_stdout = gen_out
 
-        gen_stderr = iteration.collect_out(stderr_list)
+        gen_stderr = adhoc.collect_out(stderr_list)
 
         if method == 'tcp':
             join_raw = process.run(

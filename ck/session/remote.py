@@ -2,8 +2,8 @@ import pathlib
 import time
 
 from ck import exception
-from ck import iteration
 from ck.connection import ssh
+from ck.iteration import adhoc
 from ck.session import passive
 
 
@@ -78,9 +78,9 @@ class RemoteSession(passive.PassiveSession):
                 'cat',
                 str(pid_path),
             ],
-            iteration.empty_in(),
-            iteration.collect_out(stdout_list),
-            iteration.ignore_out()
+            adhoc.empty_in(),
+            adhoc.collect_out(stdout_list),
+            adhoc.ignore_out()
         )():
             return
 
@@ -95,9 +95,9 @@ class RemoteSession(passive.PassiveSession):
                 '-0',
                 str(pid),
             ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.ignore_out()
+            adhoc.empty_in(),
+            adhoc.empty_out(),
+            adhoc.ignore_out()
         )():
             return
 
@@ -126,9 +126,9 @@ class RemoteSession(passive.PassiveSession):
                 '--parents',
                 str(self._path),
             ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.collect_out(stderr_list)
+            adhoc.empty_in(),
+            adhoc.empty_out(),
+            adhoc.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -147,14 +147,14 @@ class RemoteSession(passive.PassiveSession):
                 '-m',
                 'ck.clickhouse.setup',
             ],
-            iteration.given_in(repr({
+            adhoc.given_in(repr({
                 'tcp_port': self._tcp_port,
                 'http_port': self._http_port,
                 'data_dir': str(self._path),
                 'config': self._config,
             }).encode()),
-            iteration.empty_out(),
-            iteration.collect_out(stderr_list)
+            adhoc.empty_out(),
+            adhoc.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -173,9 +173,9 @@ class RemoteSession(passive.PassiveSession):
                 f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
             ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.empty_out()
+            adhoc.empty_in(),
+            adhoc.empty_out(),
+            adhoc.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 
@@ -219,9 +219,9 @@ class RemoteSession(passive.PassiveSession):
                 '-15',
                 str(pid),
             ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.collect_out(stderr_list)
+            adhoc.empty_in(),
+            adhoc.empty_out(),
+            adhoc.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -243,9 +243,9 @@ class RemoteSession(passive.PassiveSession):
                     '-9',
                     str(pid),
                 ],
-                iteration.empty_in(),
-                iteration.empty_out(),
-                iteration.collect_out(stderr_list)
+                adhoc.empty_in(),
+                adhoc.empty_out(),
+                adhoc.collect_out(stderr_list)
             )():
                 raise exception.ShellError(
                     self._host,
