@@ -252,7 +252,7 @@ class RemoteSession(passive.PassiveSession):
                     b''.join(stderr_list).decode()
                 )
 
-            while self.get_pid() is None:
+            while self.get_pid() is not None:
                 time.sleep(ping_interval)
 
         return pid

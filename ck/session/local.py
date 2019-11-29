@@ -166,7 +166,7 @@ class LocalSession(passive.PassiveSession):
         else:
             os.kill(pid, 9)
 
-            while self.get_pid() is None:
+            while self.get_pid() is not None:
                 time.sleep(ping_interval)
 
         return pid
