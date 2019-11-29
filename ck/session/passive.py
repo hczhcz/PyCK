@@ -2,11 +2,9 @@ import types
 import urllib.parse
 
 from ck import exception
-from ck.clickhouse import lookup
-from ck.connection import http
-from ck.connection import process
-from ck.connection import ssh
-from ck.iteration import adhoc
+from ck import clickhouse
+from ck import connection
+from ck import iteration
 
 
 class PassiveSession(object):
@@ -44,11 +42,11 @@ class PassiveSession(object):
         self._ssh_default_data_dir = None
         self._ssh_binary_file = None
 
-    def _connect_ssh(self):
+    def _require_ssh(self):
         # connect
 
         if self._ssh_client is None:
-            self._ssh_client = ssh.connect(
+            self._ssh_client = connection.connect_ssh(
                 self._host,
                 self._ssh_port,
                 self._ssh_username,
@@ -61,7 +59,7 @@ class PassiveSession(object):
         stdout_list = []
         stderr_list = []
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
@@ -69,9 +67,9 @@ class PassiveSession(object):
                 '-m',
                 'ck.clickhouse.lookup',
             ],
-            adhoc.empty_in(),
-            adhoc.collect_out(stdout_list),
-            adhoc.collect_out(stderr_list)
+            iteration.empty_in(),
+            iteration.collect_out(stdout_list),
+            iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -109,24 +107,24 @@ class PassiveSession(object):
         stderr_list = []
 
         if gen_in is None:
-            gen_stdin = adhoc.given_in(f'{query_text}\n'.encode())
+            gen_stdin = iteration.given_in(f'{query_text}\n'.encode())
         else:
-            gen_stdin = adhoc.concat(
-                adhoc.given_in(f'{query_text}\n'.encode()),
+            gen_stdin = iteration.concat(
+                iteration.given_in(f'{query_text}\n'.encode()),
                 gen_in
             )
 
         if gen_out is None:
-            gen_stdout = adhoc.collect_out(stdout_list)
+            gen_stdout = iteration.collect_out(stdout_list)
         else:
             gen_stdout = gen_out
 
-        gen_stderr = adhoc.collect_out(stderr_list)
+        gen_stderr = iteration.collect_out(stderr_list)
 
         if method == 'tcp':
-            join_raw = process.run(
+            join_raw = connection.run_process(
                 [
-                    lookup.binary_file(),
+                    clickhouse.binary_file(),
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
@@ -141,7 +139,7 @@ class PassiveSession(object):
             )
             ok = 0
         elif method == 'http':
-            join_raw = http.run(
+            join_raw = connection.run_http(
                 self._host,
                 self._http_port,
                 f'/?{urllib.parse.urlencode(settings)}',
@@ -151,9 +149,9 @@ class PassiveSession(object):
             )
             ok = 200
         elif method == 'ssh':
-            self._connect_ssh()
+            self._require_ssh()
 
-            join_raw = ssh.run(
+            join_raw = connection.run_ssh(
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,

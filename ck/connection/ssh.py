@@ -4,7 +4,7 @@ import threading
 import types
 
 
-def connect(
+def connect_ssh(
     host,
     port=22,
     username=None,
@@ -25,7 +25,7 @@ def connect(
     return client
 
 
-def run(
+def run_ssh(
     client,
     args,
     gen_stdin,

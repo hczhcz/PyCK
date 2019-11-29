@@ -1,9 +1,9 @@
 import pathlib
 import time
 
+from ck import connection
 from ck import exception
-from ck.connection import ssh
-from ck.iteration import adhoc
+from ck import iteration
 from ck.session import passive
 
 
@@ -50,7 +50,7 @@ class RemoteSession(passive.PassiveSession):
             ssh_command_prefix
         )
 
-        self._connect_ssh()
+        self._require_ssh()
 
         if data_dir is None:
             self._path = pathlib.Path(self._ssh_default_data_dir)
@@ -72,15 +72,15 @@ class RemoteSession(passive.PassiveSession):
 
         stdout_list = []
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 'cat',
                 str(pid_path),
             ],
-            adhoc.empty_in(),
-            adhoc.collect_out(stdout_list),
-            adhoc.ignore_out()
+            iteration.empty_in(),
+            iteration.collect_out(stdout_list),
+            iteration.ignore_out()
         )():
             return
 
@@ -88,16 +88,16 @@ class RemoteSession(passive.PassiveSession):
 
         # find process
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 'kill',
                 '-0',
                 str(pid),
             ],
-            adhoc.empty_in(),
-            adhoc.empty_out(),
-            adhoc.ignore_out()
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.ignore_out()
         )():
             return
 
@@ -119,16 +119,16 @@ class RemoteSession(passive.PassiveSession):
 
         stderr_list = []
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 'mkdir',
                 '--parents',
                 str(self._path),
             ],
-            adhoc.empty_in(),
-            adhoc.empty_out(),
-            adhoc.collect_out(stderr_list)
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -139,7 +139,7 @@ class RemoteSession(passive.PassiveSession):
 
         stderr_list = []
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
@@ -147,14 +147,14 @@ class RemoteSession(passive.PassiveSession):
                 '-m',
                 'ck.clickhouse.setup',
             ],
-            adhoc.given_in(repr({
+            iteration.given_in(repr({
                 'tcp_port': self._tcp_port,
                 'http_port': self._http_port,
                 'data_dir': str(self._path),
                 'config': self._config,
             }).encode()),
-            adhoc.empty_out(),
-            adhoc.collect_out(stderr_list)
+            iteration.empty_out(),
+            iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -163,7 +163,7 @@ class RemoteSession(passive.PassiveSession):
 
         # run
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 *self._ssh_command_prefix,
@@ -173,9 +173,9 @@ class RemoteSession(passive.PassiveSession):
                 f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
             ],
-            adhoc.empty_in(),
-            adhoc.empty_out(),
-            adhoc.empty_out()
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 
@@ -212,16 +212,16 @@ class RemoteSession(passive.PassiveSession):
 
         stderr_list = []
 
-        if ssh.run(
+        if connection.run_ssh(
             self._ssh_client,
             [
                 'kill',
                 '-15',
                 str(pid),
             ],
-            adhoc.empty_in(),
-            adhoc.empty_out(),
-            adhoc.collect_out(stderr_list)
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -236,16 +236,16 @@ class RemoteSession(passive.PassiveSession):
         else:
             stderr_list = []
 
-            if ssh.run(
+            if connection.run_ssh(
                 self._ssh_client,
                 [
                     'kill',
                     '-9',
                     str(pid),
                 ],
-                adhoc.empty_in(),
-                adhoc.empty_out(),
-                adhoc.collect_out(stderr_list)
+                iteration.empty_in(),
+                iteration.empty_out(),
+                iteration.collect_out(stderr_list)
             )():
                 raise exception.ShellError(
                     self._host,

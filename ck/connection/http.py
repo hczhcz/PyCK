@@ -3,7 +3,7 @@ import threading
 import types
 
 
-def run(
+def run_http(
     host,
     port,
     path,

@@ -2,11 +2,10 @@ import os
 import pathlib
 import time
 
+from ck import clickhouse
+from ck import connection
 from ck import exception
-from ck.clickhouse import lookup
-from ck.clickhouse import setup
-from ck.connection import process
-from ck.iteration import adhoc
+from ck import iteration
 from ck.session import passive
 
 
@@ -52,7 +51,7 @@ class LocalSession(passive.PassiveSession):
         )
 
         if data_dir is None:
-            self._path = pathlib.Path(lookup.default_data_dir())
+            self._path = pathlib.Path(clickhouse.default_data_dir())
         else:
             self._path = pathlib.Path(data_dir)
 
@@ -103,7 +102,7 @@ class LocalSession(passive.PassiveSession):
 
         # setup
 
-        setup.create_config(
+        clickhouse.create_config(
             self._tcp_port,
             self._http_port,
             str(self._path),
@@ -112,17 +111,17 @@ class LocalSession(passive.PassiveSession):
 
         # run
 
-        if process.run(
+        if connection.run_process(
             [
-                lookup.binary_file(),
+                clickhouse.binary_file(),
                 'server',
                 '--daemon',
                 f'--config-file={config_path}',
                 f'--pid-file={pid_path}',
             ],
-            adhoc.empty_in(),
-            adhoc.empty_out(),
-            adhoc.empty_out()
+            iteration.empty_in(),
+            iteration.empty_out(),
+            iteration.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 

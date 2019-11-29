@@ -1,3 +1,3 @@
-from ck.session.local import LocalSession
-from ck.session.passive import PassiveSession
-from ck.session.remote import RemoteSession
+from ck.session import LocalSession
+from ck.session import PassiveSession
+from ck.session import RemoteSession
