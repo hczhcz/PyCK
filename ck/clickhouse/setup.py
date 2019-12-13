@@ -152,12 +152,12 @@ def create_config(
     ) -> None:
         if type(data) is dict:
             for key, value in data.items():
-                assert key is str
+                assert type(key) is str
 
                 subnode = xml.etree.ElementTree.SubElement(node, key)
                 build_xml(value, subnode)
         else:
-            assert data is str
+            assert type(data) is str
 
             node.text = data
 
