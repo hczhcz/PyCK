@@ -147,12 +147,12 @@ class RemoteSession(passive.PassiveSession):
                 '-m',
                 'ck.clickhouse.setup',
             ],
-            iteration.given_in(repr({
+            iteration.given_in([repr({
                 'tcp_port': self._tcp_port,
                 'http_port': self._http_port,
                 'data_dir': str(self._path),
                 'config': self._config,
-            }).encode()),
+            }).encode()]),
             iteration.empty_out(),
             iteration.collect_out(stderr_list)
         )():

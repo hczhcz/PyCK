@@ -5,10 +5,12 @@ def empty_in():
     yield from ()
 
 
-def given_in(data):
-    assert type(data) is bytes
+def given_in(data_list):
+    assert type(data_list) is list
+    for data in data_list:
+        assert type(data) is bytes
 
-    yield data
+    yield from data_list
 
 
 def empty_out():

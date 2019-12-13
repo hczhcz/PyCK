@@ -107,10 +107,10 @@ class PassiveSession(object):
         stderr_list = []
 
         if gen_in is None:
-            gen_stdin = iteration.given_in(f'{query_text}\n'.encode())
+            gen_stdin = iteration.given_in([f'{query_text}\n'.encode()])
         else:
             gen_stdin = iteration.concat(
-                iteration.given_in(f'{query_text}\n'.encode()),
+                iteration.given_in([f'{query_text}\n'.encode()]),
                 gen_in
             )
 
