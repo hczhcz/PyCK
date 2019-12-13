@@ -1,10 +1,11 @@
 import io
+import typing
 
 
-def stream_in(stream, buffer_size=1 << 20):
-    assert type(stream) is io.BufferedReader
-    assert type(buffer_size) is int
-
+def stream_in(
+        stream: typing.BinaryIO,
+        buffer_size: int = 1 << 20
+) -> typing.Generator[bytes, None, None]:
     data = stream.read(buffer_size)
 
     while data:
@@ -13,21 +14,21 @@ def stream_in(stream, buffer_size=1 << 20):
         data = stream.read(buffer_size)
 
 
-def stream_out(stream):
-    assert type(stream) is io.BufferedWriter
+def file_in(
+        path: str,
+        buffer_size: int = 1 << 20
+) -> typing.Generator[bytes, None, None]:
+    yield from stream_in(open(path, 'rb'), buffer_size)
 
+
+def stream_out(
+        stream: typing.BinaryIO
+) -> typing.Generator[None, bytes, None]:
     while True:
         stream.write((yield))
 
 
-def file_in(path, buffer_size=1 << 20):
-    assert type(path) is str
-    assert type(buffer_size) is int
-
-    yield from stream_in(open(path, 'rb'), buffer_size)
-
-
-def file_out(path):
-    assert type(path) is str
-
+def file_out(
+        path: str
+) -> typing.Generator[None, bytes, None]:
     yield from stream_out(open(path, 'wb'))

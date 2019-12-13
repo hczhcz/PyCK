@@ -1,11 +1,11 @@
 import pathlib
 
 
-def default_data_dir():
+def default_data_dir() -> str:
     return str(pathlib.Path.home().joinpath('.ck_data'))
 
 
-def binary_file():
+def binary_file() -> str:
     return str(pathlib.Path(__file__).parent.joinpath('clickhouse'))
 
 

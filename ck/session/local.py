@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import typing
 
 from ck import clickhouse
 from ck import connection
@@ -11,34 +12,19 @@ from ck.session import passive
 
 class LocalSession(passive.PassiveSession):
     def __init__(
-        self,
-        tcp_port=9000,
-        http_port=8123,
-        ssh_port=22,
-        ssh_username=None,
-        ssh_password=None,
-        ssh_public_key=None,
-        ssh_command_prefix=[],
-        data_dir=None,
-        config={},
-        stop=False,
-        start=True
-    ):
-        assert type(tcp_port) is int
-        assert type(http_port) is int
-        assert type(ssh_port) is int
-        assert ssh_username is None or type(ssh_username) is str
-        assert ssh_password is None or type(ssh_password) is str
-        assert ssh_public_key is None or type(ssh_public_key) is str
-        assert type(ssh_command_prefix) is list
-        for arg in ssh_command_prefix:
-            assert type(arg) is str
-        assert data_dir is None or type(data_dir) is str
-        # notice: recursive type checking
-        assert type(config) is dict
-        assert type(stop) is bool
-        assert type(start) is bool
-
+            self,
+            tcp_port: int = 9000,
+            http_port: int = 8123,
+            ssh_port: int = 22,
+            ssh_username: typing.Optional[str] = None,
+            ssh_password: typing.Optional[str] = None,
+            ssh_public_key: typing.Optional[str] = None,
+            ssh_command_prefix: typing.List[str] = [],
+            data_dir: typing.Optional[str] = None,
+            config: typing.Dict[str, typing.Any] = {},
+            stop: bool = False,
+            start: bool = True
+    ) -> None:
         super().__init__(
             'localhost',
             tcp_port,
@@ -63,7 +49,7 @@ class LocalSession(passive.PassiveSession):
         if start:
             self.start()
 
-    def get_pid(self):
+    def get_pid(self) -> typing.Optional[int]:
         pid_path = self._path.joinpath('pid')
 
         # get pid
@@ -71,7 +57,7 @@ class LocalSession(passive.PassiveSession):
         try:
             pid_text, = pid_path.open().read().splitlines()
         except FileNotFoundError:
-            return
+            return None
 
         pid = int(pid_text)
 
@@ -80,18 +66,19 @@ class LocalSession(passive.PassiveSession):
         try:
             os.kill(pid, 0)
         except OSError:
-            return
+            return None
 
         return pid
 
-    def start(self, ping_interval=0.1, ping_retry=50):
-        assert type(ping_interval) is int or type(ping_interval) is float
-        assert type(ping_retry) is int
-
+    def start(
+            self,
+            ping_interval: float = 0.1,
+            ping_retry: int = 50
+    ) -> typing.Optional[int]:
         pid = self.get_pid()
 
         if pid is not None:
-            return
+            return None
 
         config_path = self._path.joinpath('config.xml')
         pid_path = self._path.joinpath('pid')
@@ -112,16 +99,16 @@ class LocalSession(passive.PassiveSession):
         # run
 
         if connection.run_process(
-            [
-                clickhouse.binary_file(),
-                'server',
-                '--daemon',
-                f'--config-file={config_path}',
-                f'--pid-file={pid_path}',
-            ],
-            iteration.empty_in(),
-            iteration.empty_out(),
-            iteration.empty_out()
+                [
+                    clickhouse.binary_file(),
+                    'server',
+                    '--daemon',
+                    f'--config-file={config_path}',
+                    f'--pid-file={pid_path}',
+                ],
+                iteration.empty_in(),
+                iteration.empty_out(),
+                iteration.empty_out()
         )():
             raise exception.ServiceError(self._host, 'daemon')
 
@@ -145,14 +132,15 @@ class LocalSession(passive.PassiveSession):
 
         return pid
 
-    def stop(self, ping_interval=0.1, ping_retry=50):
-        assert type(ping_interval) is int or type(ping_interval) is float
-        assert type(ping_retry) is int
-
+    def stop(
+            self,
+            ping_interval: float = 0.1,
+            ping_retry: int = 50
+    ) -> typing.Optional[int]:
         pid = self.get_pid()
 
         if pid is None:
-            return
+            return None
 
         # kill process
 

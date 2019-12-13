@@ -1,47 +1,32 @@
 import http.client
 import threading
-import types
+import typing
 
 
 def run_http(
-    host,
-    port,
-    path,
-    gen_stdin,
-    gen_stdout,
-    gen_stderr,
-    buffer_size=1 << 20,
-    join_interval=0.1
-):
-    assert type(host) is str
-    assert type(port) is int
-    assert type(path) is str
-    assert type(gen_stdin) is types.GeneratorType
-    assert type(gen_stdout) is types.GeneratorType
-    assert type(gen_stderr) is types.GeneratorType
-    assert type(buffer_size) is int
-    assert type(join_interval) is int or type(join_interval) is float
-
+        host: str,
+        port: int,
+        path: str,
+        gen_stdin: typing.Generator[bytes, None, None],
+        gen_stdout: typing.Generator[None, bytes, None],
+        gen_stderr: typing.Generator[None, bytes, None],
+        buffer_size: int = 1 << 20,
+        join_interval: float = 0.1
+) -> typing.Callable[[], int]:
     connection = None
     response = None
     error = None
 
     # create thread
 
-    def iterate_stdin():
-        for data in gen_stdin:
-            assert type(data) is bytes
-
-            yield data
-
-    def post_request():
+    def post_request() -> None:
         nonlocal connection
         nonlocal response
         nonlocal error
 
         try:
             connection = http.client.HTTPConnection(host, port)
-            connection.request('POST', path, iterate_stdin())
+            connection.request('POST', path, gen_stdin)
 
             response = connection.getresponse()
 
@@ -65,7 +50,7 @@ def run_http(
 
     # join thread
 
-    def join():
+    def join() -> int:
         while error is None and thread.is_alive():
             thread.join(join_interval)
 
@@ -74,6 +59,8 @@ def run_http(
                 connection.close()
 
             raise error
+
+        assert response
 
         return response.status
 

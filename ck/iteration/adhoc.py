@@ -1,37 +1,37 @@
-import types
+import typing
 
 
-def empty_in():
+def empty_in() -> typing.Generator[bytes, None, None]:
     yield from ()
 
 
-def given_in(data_list):
-    assert type(data_list) is list
-    for data in data_list:
-        assert type(data) is bytes
-
+def given_in(
+        data_list: typing.List[bytes]
+) -> typing.Generator[bytes, None, None]:
     yield from data_list
 
 
-def empty_out():
+def concat_in(
+        gen_1: typing.Generator[bytes, None, None],
+        gen_2: typing.Generator[bytes, None, None]
+) -> typing.Generator[bytes, None, None]:
+    yield from gen_1
+    yield from gen_2
+
+
+def empty_out() -> typing.Generator[None, bytes, None]:
     yield
 
 
-def ignore_out():
+def ignore_out() -> typing.Generator[None, bytes, None]:
     while True:
         yield
 
 
-def collect_out(data_list):
-    assert data_list == []
+def collect_out(
+        data_list: typing.List[bytes]
+) -> typing.Generator[None, bytes, None]:
+    assert not data_list
 
     while True:
         data_list.append((yield))
-
-
-def concat(gen_1, gen_2):
-    assert type(gen_1) is types.GeneratorType
-    assert type(gen_2) is types.GeneratorType
-
-    yield from gen_1
-    yield from gen_2

@@ -1,4 +1,5 @@
-import types
+import typing
+import typing_extensions
 import urllib.parse
 
 from ck import exception
@@ -9,27 +10,16 @@ from ck import iteration
 
 class PassiveSession(object):
     def __init__(
-        self,
-        host='localhost',
-        tcp_port=9000,
-        http_port=8123,
-        ssh_port=22,
-        ssh_username=None,
-        ssh_password=None,
-        ssh_public_key=None,
-        ssh_command_prefix=[]
-    ):
-        assert type(host) is str
-        assert type(tcp_port) is int
-        assert type(http_port) is int
-        assert type(ssh_port) is int
-        assert ssh_username is None or type(ssh_username) is str
-        assert ssh_password is None or type(ssh_password) is str
-        assert ssh_public_key is None or type(ssh_public_key) is str
-        assert type(ssh_command_prefix) is list
-        for arg in ssh_command_prefix:
-            assert type(arg) is str
-
+            self,
+            host: str = 'localhost',
+            tcp_port: int = 9000,
+            http_port: int = 8123,
+            ssh_port: int = 22,
+            ssh_username: typing.Optional[str] = None,
+            ssh_password: typing.Optional[str] = None,
+            ssh_public_key: typing.Optional[str] = None,
+            ssh_command_prefix: typing.List[str] = []
+    ) -> None:
         self._host = host
         self._tcp_port = tcp_port
         self._http_port = http_port
@@ -39,10 +29,10 @@ class PassiveSession(object):
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix
         self._ssh_client = None
-        self._ssh_default_data_dir = None
-        self._ssh_binary_file = None
+        self._ssh_default_data_dir: typing.Optional[str] = None
+        self._ssh_binary_file: typing.Optional[str] = None
 
-    def _require_ssh(self):
+    def _require_ssh(self) -> None:
         # connect
 
         if self._ssh_client is None:
@@ -56,20 +46,20 @@ class PassiveSession(object):
 
         # lookup
 
-        stdout_list = []
-        stderr_list = []
+        stdout_list: typing.List[bytes] = []
+        stderr_list: typing.List[bytes] = []
 
         if connection.run_ssh(
-            self._ssh_client,
-            [
-                *self._ssh_command_prefix,
-                'python3',
-                '-m',
-                'ck.clickhouse.lookup',
-            ],
-            iteration.empty_in(),
-            iteration.collect_out(stdout_list),
-            iteration.collect_out(stderr_list)
+                self._ssh_client,
+                [
+                    *self._ssh_command_prefix,
+                    'python3',
+                    '-m',
+                    'ck.clickhouse.lookup',
+                ],
+                iteration.empty_in(),
+                iteration.collect_out(stdout_list),
+                iteration.collect_out(stderr_list)
         )():
             raise exception.ShellError(
                 self._host,
@@ -82,34 +72,30 @@ class PassiveSession(object):
         ) = b''.join(stdout_list).decode().splitlines()
 
     def query(
-        self,
-        query_text,
-        method='http',
-        use_async=False,
-        gen_in=None,
-        gen_out=None,
-        settings={}
-    ):
-        assert type(query_text) is str
-        assert method in {'tcp', 'http', 'ssh'}
-        assert type(use_async) is bool
-        assert gen_in is None or type(gen_in) is types.GeneratorType
-        assert gen_out is None or type(gen_out) is types.GeneratorType
-        # TODO: check setting keys
-        assert type(settings) is dict
-        for key, value in settings.items():
-            assert type(key) is str
-            assert type(value) is str
-
+            self,
+            query_text: str,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            use_async: bool = False,
+            gen_in: typing.Optional[
+                typing.Generator[bytes, None, None]
+            ] = None,
+            gen_out: typing.Optional[
+                typing.Generator[None, bytes, None]
+            ] = None,
+            settings: typing.Dict[str, str] = {}
+    ) -> typing.Union[
+        typing.Optional[bytes],
+        typing.Callable[[], typing.Optional[bytes]]
+    ]:
         # create connection(s)
 
-        stdout_list = []
-        stderr_list = []
+        stdout_list: typing.List[bytes] = []
+        stderr_list: typing.List[bytes] = []
 
         if gen_in is None:
             gen_stdin = iteration.given_in([f'{query_text}\n'.encode()])
         else:
-            gen_stdin = iteration.concat(
+            gen_stdin = iteration.concat_in(
                 iteration.given_in([f'{query_text}\n'.encode()]),
                 gen_in
             )
@@ -151,6 +137,8 @@ class PassiveSession(object):
         elif method == 'ssh':
             self._require_ssh()
 
+            assert self._ssh_binary_file
+
             join_raw = connection.run_ssh(
                 self._ssh_client,
                 [
@@ -171,7 +159,7 @@ class PassiveSession(object):
 
         # join connection(s)
 
-        def join():
+        def join() -> typing.Optional[bytes]:
             if join_raw() != ok:
                 raise exception.QueryError(
                     self._host,
@@ -182,14 +170,17 @@ class PassiveSession(object):
             if gen_out is None:
                 return b''.join(stdout_list)
 
+            return None
+
         if use_async:
             return join
 
         return join()
 
-    def ping(self, method='http'):
-        assert method in {'tcp', 'http', 'ssh'}
-
+    def ping(
+            self,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http'
+    ) -> bool:
         try:
             return self.query('select 42', method=method) == b'42\n'
         except ConnectionError:

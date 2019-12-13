@@ -1,16 +1,17 @@
 import ast
 import os
 import pathlib
+import typing
 import xml.etree.ElementTree
 
 
-def create_config(tcp_port, http_port, data_dir, config):
-    assert type(tcp_port) is int
-    assert type(http_port) is int
-    assert type(data_dir) is str
-    # notice: recursive type checking
-    assert type(config) is dict
-
+def create_config(
+        tcp_port: int,
+        http_port: int,
+        data_dir: str,
+        # notice: recursive type
+        config: typing.Dict[str, typing.Any]
+) -> None:
     path = pathlib.Path(data_dir)
 
     tmp_path = path.joinpath('tmp')
@@ -144,15 +145,20 @@ def create_config(tcp_port, http_port, data_dir, config):
 
     # generate xml
 
-    def build_xml(data, node):
-        # notice: recursive type checking
-        assert type(data) is dict or type(data) is str
-
+    def build_xml(
+            # notice: recursive type
+            data: typing.Any,
+            node: xml.etree.ElementTree.Element
+    ) -> None:
         if type(data) is dict:
             for key, value in data.items():
+                assert key is str
+
                 subnode = xml.etree.ElementTree.SubElement(node, key)
                 build_xml(value, subnode)
         else:
+            assert data is str
+
             node.text = data
 
     root = xml.etree.ElementTree.Element('yandex')

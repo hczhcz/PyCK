@@ -1,10 +1,10 @@
-from ck.iteration.adhoc import collect_out
-from ck.iteration.adhoc import concat
-from ck.iteration.adhoc import empty_in
-from ck.iteration.adhoc import empty_out
-from ck.iteration.adhoc import given_in
-from ck.iteration.adhoc import ignore_out
-from ck.iteration.io import file_in
-from ck.iteration.io import file_out
-from ck.iteration.io import stream_in
-from ck.iteration.io import stream_out
+from ck.iteration.adhoc import collect_out as collect_out
+from ck.iteration.adhoc import concat_in as concat_in
+from ck.iteration.adhoc import empty_in as empty_in
+from ck.iteration.adhoc import empty_out as empty_out
+from ck.iteration.adhoc import given_in as given_in
+from ck.iteration.adhoc import ignore_out as ignore_out
+from ck.iteration.io import file_in as file_in
+from ck.iteration.io import file_out as file_out
+from ck.iteration.io import stream_in as stream_in
+from ck.iteration.io import stream_out as stream_out

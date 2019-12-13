@@ -1,22 +1,16 @@
 import paramiko
 import shlex
 import threading
-import types
+import typing
 
 
 def connect_ssh(
-    host,
-    port=22,
-    username=None,
-    password=None,
-    public_key=None
-):
-    assert type(host) is str
-    assert type(port) is int
-    assert username is None or type(username) is str
-    assert password is None or type(password) is str
-    assert public_key is None or type(public_key) is str
-
+        host: str,
+        port: int = 22,
+        username: typing.Optional[str] = None,
+        password: typing.Optional[str] = None,
+        public_key: typing.Optional[str] = None
+) -> paramiko.SSHClient:
     client = paramiko.SSHClient()
 
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -26,24 +20,14 @@ def connect_ssh(
 
 
 def run_ssh(
-    client,
-    args,
-    gen_stdin,
-    gen_stdout,
-    gen_stderr,
-    buffer_size=1 << 20,
-    join_interval=0.1
-):
-    assert type(client) is paramiko.SSHClient
-    assert type(args) is list
-    for arg in args:
-        assert type(arg) is str
-    assert type(gen_stdin) is types.GeneratorType
-    assert type(gen_stdout) is types.GeneratorType
-    assert type(gen_stderr) is types.GeneratorType
-    assert type(buffer_size) is int
-    assert type(join_interval) is int or type(join_interval) is float
-
+        client: paramiko.SSHClient,
+        args: typing.List[str],
+        gen_stdin: typing.Generator[bytes, None, None],
+        gen_stdout: typing.Generator[None, bytes, None],
+        gen_stderr: typing.Generator[None, bytes, None],
+        buffer_size: int = 1 << 20,
+        join_interval: float = 0.1
+) -> typing.Callable[[], int]:
     error = None
 
     # connect
@@ -56,20 +40,18 @@ def run_ssh(
 
     # create threads
 
-    def send_stdin():
+    def send_stdin() -> None:
         nonlocal error
 
         try:
             for data in gen_stdin:
-                assert type(data) is bytes
-
                 channel.sendall(data)
 
             channel.shutdown_write()
         except Exception as e:
             error = e
 
-    def receive_stdout():
+    def receive_stdout() -> None:
         nonlocal error
 
         try:
@@ -82,7 +64,7 @@ def run_ssh(
         except Exception as e:
             error = e
 
-    def receive_stderr():
+    def receive_stderr() -> None:
         nonlocal error
 
         try:
@@ -105,7 +87,7 @@ def run_ssh(
 
     # join threads
 
-    def join():
+    def join() -> int:
         while error is None and (
             stdin_thread.is_alive()
                 or stdout_thread.is_alive()

@@ -1,25 +1,16 @@
 import subprocess
 import threading
-import types
+import typing
 
 
 def run_process(
-    args,
-    gen_stdin,
-    gen_stdout,
-    gen_stderr,
-    buffer_size=1 << 20,
-    join_interval=0.1
-):
-    assert type(args) is list
-    for arg in args:
-        assert type(arg) is str
-    assert type(gen_stdin) is types.GeneratorType
-    assert type(gen_stdout) is types.GeneratorType
-    assert type(gen_stderr) is types.GeneratorType
-    assert type(buffer_size) is int
-    assert type(join_interval) is int or type(join_interval) is float
-
+        args: typing.List[str],
+        gen_stdin: typing.Generator[bytes, None, None],
+        gen_stdout: typing.Generator[None, bytes, None],
+        gen_stderr: typing.Generator[None, bytes, None],
+        buffer_size: int = 1 << 20,
+        join_interval: float = 0.1
+) -> typing.Callable[[], int]:
     error = None
 
     # connect
@@ -33,20 +24,18 @@ def run_process(
 
     # create threads
 
-    def send_stdin():
+    def send_stdin() -> None:
         nonlocal error
 
         try:
             for data in gen_stdin:
-                assert type(data) is bytes
-
                 process.stdin.write(data)
 
             process.stdin.close()
         except Exception as e:
             error = e
 
-    def receive_stdout():
+    def receive_stdout() -> None:
         nonlocal error
 
         try:
@@ -59,7 +48,7 @@ def run_process(
         except Exception as e:
             error = e
 
-    def receive_stderr():
+    def receive_stderr() -> None:
         nonlocal error
 
         try:
@@ -82,7 +71,7 @@ def run_process(
 
     # join threads
 
-    def join():
+    def join() -> int:
         while error is None and (
             stdin_thread.is_alive()
                 or stdout_thread.is_alive()
