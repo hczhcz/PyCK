@@ -8,7 +8,7 @@ from ck import connection
 from ck import iteration
 
 
-class PassiveSession(object):
+class PassiveSession:
     def __init__(
             self,
             host: str = 'localhost',
@@ -123,7 +123,7 @@ class PassiveSession(object):
                 gen_stdout,
                 gen_stderr
             )
-            ok = 0
+            good_status = 0
         elif method == 'http':
             join_raw = connection.run_http(
                 self._host,
@@ -133,7 +133,7 @@ class PassiveSession(object):
                 gen_stdout,
                 gen_stderr
             )
-            ok = 200
+            good_status = 200
         elif method == 'ssh':
             self._require_ssh()
 
@@ -155,12 +155,12 @@ class PassiveSession(object):
                 gen_stdout,
                 gen_stderr
             )
-            ok = 0
+            good_status = 0
 
         # join connection(s)
 
         def join() -> typing.Optional[bytes]:
-            if join_raw() != ok:
+            if join_raw() != good_status:
                 raise exception.QueryError(
                     self._host,
                     query_text,

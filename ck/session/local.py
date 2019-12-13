@@ -114,7 +114,7 @@ class LocalSession(passive.PassiveSession):
 
         # wait for server initialization
 
-        for i in range(ping_retry):
+        for _ in range(ping_retry):
             pid = self.get_pid()
 
             if pid is not None:
@@ -146,7 +146,7 @@ class LocalSession(passive.PassiveSession):
 
         os.kill(pid, 15)
 
-        for i in range(ping_retry):
+        for _ in range(ping_retry):
             if self.get_pid() is None:
                 break
 

@@ -1,7 +1,9 @@
-import paramiko
 import shlex
 import threading
 import typing
+
+# third-party
+import paramiko
 
 
 def connect_ssh(
@@ -48,8 +50,8 @@ def run_ssh(
                 channel.sendall(data)
 
             channel.shutdown_write()
-        except Exception as e:
-            error = e
+        except Exception as raw_error:
+            error = raw_error
 
     def receive_stdout() -> None:
         nonlocal error
@@ -61,8 +63,8 @@ def run_ssh(
             while data:
                 gen_stdout.send(data)
                 data = channel.recv(buffer_size)
-        except Exception as e:
-            error = e
+        except Exception as raw_error:
+            error = raw_error
 
     def receive_stderr() -> None:
         nonlocal error
@@ -74,8 +76,8 @@ def run_ssh(
             while data:
                 gen_stderr.send(data)
                 data = channel.recv_stderr(buffer_size)
-        except Exception as e:
-            error = e
+        except Exception as raw_error:
+            error = raw_error
 
     stdin_thread = threading.Thread(target=send_stdin)
     stdout_thread = threading.Thread(target=receive_stdout)
@@ -89,7 +91,7 @@ def run_ssh(
 
     def join() -> int:
         while error is None and (
-            stdin_thread.is_alive()
+                stdin_thread.is_alive()
                 or stdout_thread.is_alive()
                 or stderr_thread.is_alive()
         ):

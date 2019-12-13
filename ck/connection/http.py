@@ -41,8 +41,8 @@ def run_http(
             while data:
                 gen_out.send(data)
                 data = response.read(buffer_size)
-        except Exception as e:
-            error = e
+        except Exception as raw_error:
+            error = raw_error
 
     thread = threading.Thread(target=post_request)
 
