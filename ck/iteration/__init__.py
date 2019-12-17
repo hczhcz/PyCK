@@ -4,6 +4,7 @@ from ck.iteration.adhoc import empty_in as empty_in
 from ck.iteration.adhoc import empty_out as empty_out
 from ck.iteration.adhoc import given_in as given_in
 from ck.iteration.adhoc import ignore_out as ignore_out
+from ck.iteration.io import EchoIO as EchoIO
 from ck.iteration.io import file_in as file_in
 from ck.iteration.io import file_out as file_out
 from ck.iteration.io import stream_in as stream_in

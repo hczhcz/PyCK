@@ -60,3 +60,13 @@ def test_io_out():
     next(gen_out)
     gen_out.send(b'world\n')
     assert open('/tmp/pyck_test', 'rb').read() == b'world\n'
+
+
+def test_echo_io():
+    stream = iteration.EchoIO()
+
+    stream.write(b'hello\n')
+    assert stream.read() == b'hello\n'
+    stream.write(b'world\n')
+    assert stream.read(3) == b'wor'
+    assert stream.read(3) == b'ld\n'
