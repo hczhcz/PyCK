@@ -3,12 +3,11 @@ from ck import connection
 from ck import iteration
 
 
-def test_process():
+def test_connection_process():
     ck.LocalSession()
 
     stdout_list = []
-
-    connection.run_process(
+    status = connection.run_process(
         ['clickhouse', 'client'],
         iteration.given_in([b'select 1']),
         iteration.collect_out(stdout_list),
@@ -16,14 +15,14 @@ def test_process():
     )()
 
     assert stdout_list == [b'1\n']
+    assert status == 0
 
 
-def test_http():
+def test_connection_http():
     ck.LocalSession()
 
     stdout_list = []
-
-    connection.run_http(
+    status = connection.run_http(
         'localhost',
         8123,
         '/',
@@ -33,16 +32,16 @@ def test_http():
     )()
 
     assert stdout_list == [b'1\n']
+    assert status == 200
 
 
-def test_ssh():
+def test_connection_ssh():
     ck.LocalSession()
 
     ssh_client = connection.connect_ssh('localhost')
 
     stdout_list = []
-
-    connection.run_ssh(
+    status = connection.run_ssh(
         ssh_client,
         ['clickhouse', 'client'],
         iteration.given_in([b'select 1']),
@@ -51,9 +50,10 @@ def test_ssh():
     )()
 
     assert stdout_list == [b'1\n']
+    assert status == 0
 
 
-def test_process_performance(benchmark):
+def test_connection_process_benchmark(benchmark):
     ck.LocalSession()
 
     def run():
@@ -67,7 +67,7 @@ def test_process_performance(benchmark):
     benchmark(run)
 
 
-def test_http_performance(benchmark):
+def test_connection_http_benchmark(benchmark):
     ck.LocalSession()
 
     def run():
@@ -83,7 +83,7 @@ def test_http_performance(benchmark):
     benchmark(run)
 
 
-def test_ssh_performance(benchmark):
+def test_connection_ssh_benchmark(benchmark):
     ck.LocalSession()
 
     ssh_client = connection.connect_ssh('localhost')
