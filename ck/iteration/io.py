@@ -25,6 +25,7 @@ def stream_out(
 ) -> typing.Generator[None, bytes, None]:
     while True:
         stream.write((yield))
+        stream.flush()
 
 
 def file_out(
