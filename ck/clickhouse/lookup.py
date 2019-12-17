@@ -6,7 +6,12 @@ def default_data_dir() -> str:
 
 
 def binary_file() -> str:
-    return str(pathlib.Path(__file__).parent.joinpath('clickhouse'))
+    path = pathlib.Path(__file__).parent.joinpath('clickhouse')
+
+    if path.exists():
+        return str(path)
+
+    return 'clickhouse'
 
 
 if __name__ == '__main__':
