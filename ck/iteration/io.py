@@ -54,7 +54,7 @@ class EchoIO(io.RawIOBase):
     def readable(self) -> bool:
         return True
 
-    def writeable(self) -> bool:
+    def writable(self) -> bool:
         return True
 
     def readinto(
