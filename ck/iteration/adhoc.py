@@ -20,18 +20,33 @@ def concat_in(
 
 
 def empty_out() -> typing.Generator[None, bytes, None]:
+    data = yield
+
+    if data:
+        raise RuntimeError()
+
     yield
 
 
 def ignore_out() -> typing.Generator[None, bytes, None]:
-    while True:
-        yield
+    data = yield
+
+    while data:
+        data = yield
+
+    yield
 
 
 def collect_out(
         data_list: typing.List[bytes]
 ) -> typing.Generator[None, bytes, None]:
-    assert not data_list
+    assert data_list == []
 
-    while True:
-        data_list.append((yield))
+    data = yield
+
+    while data:
+        data_list.append(data)
+
+        data = yield
+
+    yield

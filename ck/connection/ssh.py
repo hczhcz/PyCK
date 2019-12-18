@@ -63,6 +63,8 @@ def run_ssh(
             while data:
                 gen_stdout.send(data)
                 data = channel.recv(buffer_size)
+
+            gen_stdout.send(b'')
         except Exception as raw_error:
             error = raw_error
 
@@ -76,6 +78,8 @@ def run_ssh(
             while data:
                 gen_stderr.send(data)
                 data = channel.recv_stderr(buffer_size)
+
+            gen_stderr.send(b'')
         except Exception as raw_error:
             error = raw_error
 

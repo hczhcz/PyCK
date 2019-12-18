@@ -45,6 +45,8 @@ def run_process(
             while data:
                 gen_stdout.send(data)
                 data = process.stdout.read(buffer_size)
+
+            gen_stdout.send(b'')
         except Exception as raw_error:
             error = raw_error
 
@@ -58,6 +60,8 @@ def run_process(
             while data:
                 gen_stderr.send(data)
                 data = process.stderr.read(buffer_size)
+
+            gen_stderr.send(b'')
         except Exception as raw_error:
             error = raw_error
 

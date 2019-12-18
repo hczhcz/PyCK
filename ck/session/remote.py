@@ -38,7 +38,7 @@ class RemoteSession(passive.PassiveSession):
         self._require_ssh()
 
         if data_dir is None:
-            assert self._ssh_default_data_dir
+            assert self._ssh_default_data_dir is not None
 
             self._path = pathlib.Path(self._ssh_default_data_dir)
         else:
@@ -151,7 +151,7 @@ class RemoteSession(passive.PassiveSession):
 
         # run
 
-        assert self._ssh_binary_file
+        assert self._ssh_binary_file is not None
 
         if connection.run_ssh(
                 self._ssh_client,

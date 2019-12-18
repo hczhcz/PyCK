@@ -35,12 +35,17 @@ def run_http(
             else:
                 gen_out = gen_stderr
 
-            next(gen_out)
+            next(gen_stdout)
+            next(gen_stderr)
+
             data = response.read(buffer_size)
 
             while data:
                 gen_out.send(data)
                 data = response.read(buffer_size)
+
+            gen_stdout.send(b'')
+            gen_stderr.send(b'')
         except Exception as raw_error:
             error = raw_error
 
@@ -60,7 +65,7 @@ def run_http(
 
             raise error
 
-        assert response
+        assert response is not None
 
         return response.status
 

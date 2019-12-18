@@ -25,9 +25,16 @@ def file_in(
 def stream_out(
         stream: typing.BinaryIO
 ) -> typing.Generator[None, bytes, None]:
-    while True:
-        stream.write((yield))
-        stream.flush()
+    data = yield
+
+    while data:
+        stream.write(data)
+
+        data = yield
+
+    stream.close()
+
+    yield
 
 
 def file_out(
@@ -50,25 +57,16 @@ class EchoIO(io.RawIOBase):
     def writeable(self) -> bool:
         return True
 
-    def readall(self) -> bytes:
-        self._read_semaphore.acquire()
-
-        assert self._data
-
-        data = self._data
-        self._data = None
-
-        self._write_semaphore.release()
-
-        return data
-
     def readinto(
             self,
             data: bytearray
     ) -> int:
+        if self.closed and self._data is None:
+            return 0
+
         self._read_semaphore.acquire()
 
-        assert self._data
+        assert self._data is not None
 
         size = min(len(data), len(self._data))
 
@@ -89,6 +87,9 @@ class EchoIO(io.RawIOBase):
             self,
             data: bytes
     ) -> int:
+        if self.closed:
+            raise ValueError()
+
         self._write_semaphore.acquire()
 
         size = len(data)
