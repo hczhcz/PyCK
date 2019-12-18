@@ -1,3 +1,5 @@
+import pandas
+
 import ck
 from ck import iteration
 
@@ -121,6 +123,20 @@ def test_session_file():
     assert open('/tmp/pyck_test_session_2', 'rb').read() == b'hello\nworld\n'
 
     local_session.query('drop table pyck_test')
+
+
+def test_session_pandas():
+    local_session = ck.LocalSession()
+
+    stream = iteration.EchoIO()
+    join = local_session.query(
+        'select number from numbers(1000000) format CSVWithNames',
+        use_async=True,
+        gen_out=iteration.stream_out(stream)
+    )
+    dataframe = pandas.read_csv(stream)
+    join()
+    assert list(dataframe.number) == list(range(1000000))
 
 
 def test_session_method_tcp_benchmark(benchmark):
