@@ -2,8 +2,8 @@ import io
 import typing
 
 # third-party
-import pandas
-import pytest_benchmark.fixture
+import pandas  # type: ignore[import]
+import pytest_benchmark.fixture  # type: ignore[import]
 import typing_extensions
 
 import ck

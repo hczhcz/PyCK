@@ -1,7 +1,7 @@
 import typing
 
 # third-party
-import pytest_benchmark.fixture
+import pytest_benchmark.fixture  # type: ignore[import]
 
 import ck
 from ck import connection

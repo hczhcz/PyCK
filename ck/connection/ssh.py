@@ -3,7 +3,7 @@ import threading
 import typing
 
 # third-party
-import paramiko
+import paramiko  # type: ignore[import]
 
 
 def connect_ssh(
@@ -108,6 +108,6 @@ def run_ssh(
 
             raise error
 
-        return channel.recv_exit_status()
+        return channel.recv_exit_status()  # type: ignore[no-any-return]
 
     return join
