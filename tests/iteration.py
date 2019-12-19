@@ -74,18 +74,18 @@ def test_iteration_io_out():
 
 
 def test_iteration_io_echo_io():
-    stream = iteration.EchoIO()
+    read_stream, write_stream = iteration.echo_io()
 
-    stream.write(b'hello\n')
-    data = stream.read(6)
+    write_stream.write(b'hello\n')
+    data = read_stream.read(6)
     assert data == b'hello\n'
-    stream.write(b'world\n')
-    data = stream.read(2)
+    write_stream.write(b'world\n')
+    data = read_stream.read(2)
     assert data == b'wo'
-    data = stream.read(2)
+    data = read_stream.read(2)
     assert data == b'rl'
-    stream.close()
-    data = stream.read()
+    write_stream.close()
+    data = read_stream.read()
     assert data == b'd\n'
-    data = stream.read()
+    data = read_stream.read()
     assert data == b''

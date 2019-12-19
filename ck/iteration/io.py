@@ -43,58 +43,70 @@ def file_out(
     yield from stream_out(open(path, 'wb'))
 
 
-class EchoIO(io.RawIOBase):
-    def __init__(self) -> None:
-        super().__init__()
+def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
+    read_semaphore = threading.Semaphore(0)
+    write_semaphore = threading.Semaphore(1)
+    buffered_data: typing.Optional[bytes] = None
 
-        self._read_semaphore = threading.Semaphore(0)
-        self._write_semaphore = threading.Semaphore(1)
-        self._data: typing.Optional[bytes] = None
+    class ReadIO(io.RawIOBase):
+        def readable(self) -> bool:
+            return True
 
-    def readable(self) -> bool:
-        return True
+        def readinto(
+                self,
+                data: bytearray
+        ) -> int:
+            nonlocal buffered_data
 
-    def writable(self) -> bool:
-        return True
+            if self.closed:
+                raise ValueError()
 
-    def readinto(
-            self,
-            data: bytearray
-    ) -> int:
-        if self.closed and self._data is None:
-            return 0
+            if write_stream.closed and buffered_data is None:
+                return 0
 
-        self._read_semaphore.acquire()
+            read_semaphore.acquire()
 
-        assert self._data is not None
+            assert buffered_data is not None
 
-        size = min(len(data), len(self._data))
+            size = min(len(data), len(buffered_data))
 
-        if size < len(self._data):
-            data[:size] = self._data[:size]
-            self._data = self._data[size:]
+            if size < len(buffered_data):
+                data[:size] = buffered_data[:size]
+                buffered_data = buffered_data[size:]
 
-            self._read_semaphore.release()
-        else:
-            data[:size] = self._data
-            self._data = None
+                read_semaphore.release()
+            else:
+                data[:size] = buffered_data
+                buffered_data = None
 
-            self._write_semaphore.release()
+                write_semaphore.release()
 
-        return size
+            return size
 
-    def write(
-            self,
-            data: bytes
-    ) -> int:
-        if self.closed:
-            raise ValueError()
+    class WriteIO(io.RawIOBase):
+        def writable(self) -> bool:
+            return True
 
-        self._write_semaphore.acquire()
+        def write(
+                self,
+                data: bytes
+        ) -> int:
+            nonlocal buffered_data
 
-        size = len(data)
-        self._data = data
+            if self.closed or read_stream.closed:
+                raise ValueError()
 
-        self._read_semaphore.release()
+            write_semaphore.acquire()
 
-        return size
+            size = len(data)
+            buffered_data = data
+
+            read_semaphore.release()
+
+            return size
+
+    # TODO: better solution?
+    read_stream = typing.cast(typing.BinaryIO, ReadIO())
+    write_stream = typing.cast(typing.BinaryIO, WriteIO())
+
+    return read_stream, write_stream
