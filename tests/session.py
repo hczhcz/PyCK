@@ -23,10 +23,9 @@ def test_session_passive():
 
     for method in 'tcp', 'http', 'ssh':
         assert passive_session.query('select 1', method=method) == b'1\n'
-        assert passive_session.query(
+        assert passive_session.query_async(
             'select 1',
-            method=method,
-            use_async=True
+            method=method
         )() == b'1\n'
 
 
@@ -51,10 +50,9 @@ def test_session_local():
 
     for method in 'tcp', 'http', 'ssh':
         assert local_session.query('select 1', method=method) == b'1\n'
-        assert local_session.query(
+        assert local_session.query_async(
             'select 1',
-            method=method,
-            use_async=True
+            method=method
         )() == b'1\n'
 
 
@@ -79,10 +77,9 @@ def test_session_remote():
 
     for method in 'tcp', 'http', 'ssh':
         assert remote_session.query('select 1', method=method) == b'1\n'
-        assert remote_session.query(
+        assert remote_session.query_async(
             'select 1',
-            method=method,
-            use_async=True
+            method=method
         )() == b'1\n'
 
 
@@ -137,17 +134,15 @@ def test_session_pandas():
     dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
 
     read_stream, write_stream = iteration.echo_io()
-    join = local_session.query(
+    join = local_session.query_async(
         'insert into pyck_test format CSVWithNames',
-        use_async=True,
         gen_in=iteration.stream_in(read_stream)
     )
     dataframe_1.to_csv(io.TextIOWrapper(write_stream), index=False)
     join()
     read_stream, write_stream = iteration.echo_io()
-    join = local_session.query(
+    join = local_session.query_async(
         'select * from pyck_test format CSVWithNames',
-        use_async=True,
         gen_out=iteration.stream_out(write_stream)
     )
     dataframe_2 = pandas.read_csv(io.TextIOWrapper(read_stream))

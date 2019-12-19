@@ -71,11 +71,10 @@ class PassiveSession:
             self._ssh_binary_file,
         ) = b''.join(stdout_list).decode().splitlines()
 
-    def query(
+    def query_async(
             self,
             query_text: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
-            use_async: bool = False,
             gen_in: typing.Optional[
                 typing.Generator[bytes, None, None]
             ] = None,
@@ -83,10 +82,7 @@ class PassiveSession:
                 typing.Generator[None, bytes, None]
             ] = None,
             settings: typing.Dict[str, str] = {}
-    ) -> typing.Union[
-        typing.Optional[bytes],
-        typing.Callable[[], typing.Optional[bytes]]
-    ]:
+    ) -> typing.Callable[[], typing.Optional[bytes]]:
         # create connection(s)
 
         stdout_list: typing.List[bytes] = []
@@ -137,7 +133,7 @@ class PassiveSession:
         elif method == 'ssh':
             self._require_ssh()
 
-            assert self._ssh_binary_file
+            assert self._ssh_binary_file is not None
 
             join_raw = connection.run_ssh(
                 self._ssh_client,
@@ -172,10 +168,27 @@ class PassiveSession:
 
             return None
 
-        if use_async:
-            return join
+        return join
 
-        return join()
+    def query(
+            self,
+            query_text: str,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            gen_in: typing.Optional[
+                typing.Generator[bytes, None, None]
+            ] = None,
+            gen_out: typing.Optional[
+                typing.Generator[None, bytes, None]
+            ] = None,
+            settings: typing.Dict[str, str] = {}
+    ) -> typing.Optional[bytes]:
+        return self.query_async(
+            query_text,
+            method,
+            gen_in,
+            gen_out,
+            settings
+        )()
 
     def ping(
             self,
