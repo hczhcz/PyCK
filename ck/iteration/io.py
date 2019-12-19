@@ -58,7 +58,7 @@ def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
         ) -> int:
             nonlocal buffered_data
 
-            if self.closed:
+            if self.closed:  # pylint: disable=using-constant-test
                 raise ValueError()
 
             if write_stream.closed and buffered_data is None:
@@ -71,6 +71,7 @@ def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
             size = min(len(data), len(buffered_data))
 
             if size < len(buffered_data):
+                # pylint: disable=unsubscriptable-object
                 data[:size] = buffered_data[:size]
                 buffered_data = buffered_data[size:]
 

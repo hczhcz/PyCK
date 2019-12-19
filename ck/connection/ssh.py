@@ -50,7 +50,7 @@ def run_ssh(
                 channel.sendall(data)
 
             channel.shutdown_write()
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     def receive_stdout() -> None:
@@ -65,7 +65,7 @@ def run_ssh(
                 data = channel.recv(buffer_size)
 
             gen_stdout.send(b'')
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     def receive_stderr() -> None:
@@ -80,7 +80,7 @@ def run_ssh(
                 data = channel.recv_stderr(buffer_size)
 
             gen_stderr.send(b'')
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     stdin_thread = threading.Thread(target=send_stdin)
@@ -106,7 +106,7 @@ def run_ssh(
         if error is not None:
             channel.close()
 
-            raise error
+            raise error  # pylint: disable=raising-bad-type
 
         return channel.recv_exit_status()  # type: ignore[no-any-return]
 

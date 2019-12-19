@@ -46,7 +46,7 @@ def run_http(
 
             gen_stdout.send(b'')
             gen_stderr.send(b'')
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     thread = threading.Thread(target=post_request)
@@ -63,7 +63,7 @@ def run_http(
             if connection is not None:
                 connection.close()
 
-            raise error
+            raise error  # pylint: disable=raising-bad-type
 
         assert response is not None
 

@@ -65,12 +65,12 @@ def create_config(
     # add default profile
 
     if 'profiles' in data:
-        assert type(data['profiles']) is dict
+        assert isinstance(data['profiles'], dict)
     else:
         data['profiles'] = {}
 
     if 'default' in data['profiles']:
-        assert type(data['profiles']['default']) is dict
+        assert isinstance(data['profiles']['default'], dict)
     else:
         data['profiles']['default'] = {}
 
@@ -106,12 +106,12 @@ def create_config(
     # add default user
 
     if 'users' in data:
-        assert type(data['users']) is dict
+        assert isinstance(data['users'], dict)
     else:
         data['users'] = {}
 
     if 'default' in data['users']:
-        assert type(data['users']['default']) is dict
+        assert isinstance(data['users']['default'], dict)
     else:
         data['users']['default'] = {}
 
@@ -134,12 +134,12 @@ def create_config(
     # add default quota
 
     if 'quotas' in data:
-        assert type(data['quotas']) is dict
+        assert isinstance(data['quotas'], dict)
     else:
         data['quotas'] = {}
 
     if 'default' in data['quotas']:
-        assert type(data['quotas']['default']) is dict
+        assert isinstance(data['quotas']['default'], dict)
     else:
         data['quotas']['default'] = {}
 
@@ -150,14 +150,14 @@ def create_config(
             data: typing.Any,
             node: xml.etree.ElementTree.Element
     ) -> None:
-        if type(data) is dict:
+        if isinstance(data, dict):
             for key, value in data.items():
-                assert type(key) is str
+                assert isinstance(key, str)
 
                 subnode = xml.etree.ElementTree.SubElement(node, key)
                 build_xml(value, subnode)
         else:
-            assert type(data) is str
+            assert isinstance(data, str)
 
             node.text = data
 

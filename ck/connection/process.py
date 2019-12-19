@@ -32,7 +32,7 @@ def run_process(
                 process.stdin.write(data)
 
             process.stdin.close()
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     def receive_stdout() -> None:
@@ -47,7 +47,7 @@ def run_process(
                 data = process.stdout.read(buffer_size)
 
             gen_stdout.send(b'')
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     def receive_stderr() -> None:
@@ -62,7 +62,7 @@ def run_process(
                 data = process.stderr.read(buffer_size)
 
             gen_stderr.send(b'')
-        except Exception as raw_error:
+        except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
 
     stdin_thread = threading.Thread(target=send_stdin)
@@ -88,7 +88,7 @@ def run_process(
         if error is not None:
             process.kill()
 
-            raise error
+            raise error  # pylint: disable=raising-bad-type
 
         return process.wait()
 

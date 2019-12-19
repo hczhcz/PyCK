@@ -1,4 +1,9 @@
-from ck.connection.http import run_http as run_http
-from ck.connection.process import run_process as run_process
-from ck.connection.ssh import connect_ssh as connect_ssh
-from ck.connection.ssh import run_ssh as run_ssh
+from ck.connection import http
+from ck.connection import process
+from ck.connection import ssh
+
+
+run_http = http.run_http  # pylint: disable=invalid-name
+run_process = process.run_process  # pylint: disable=invalid-name
+connect_ssh = ssh.connect_ssh  # pylint: disable=invalid-name
+run_ssh = ssh.run_ssh  # pylint: disable=invalid-name
