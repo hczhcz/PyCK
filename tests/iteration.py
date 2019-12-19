@@ -1,7 +1,9 @@
+import typing
+
 from ck import iteration
 
 
-def test_iteration_adhoc_in():
+def test_iteration_adhoc_in() -> None:
     gen_in = iteration.empty_in()
     assert list(gen_in) == []
 
@@ -15,7 +17,7 @@ def test_iteration_adhoc_in():
     assert list(gen_in) == [b'1', b'2', b'3']
 
 
-def test_iteration_adhoc_out():
+def test_iteration_adhoc_out() -> None:
     gen_out = iteration.empty_out()
     next(gen_out)
     gen_out.send(b'')
@@ -23,12 +25,12 @@ def test_iteration_adhoc_out():
 
     gen_out = iteration.empty_out()
     next(gen_out)
-    ok = False
+    catched_error = False
     try:
         gen_out.send(b'1')
     except RuntimeError:
-        ok = True
-    assert ok
+        catched_error = True
+    assert catched_error
 
     gen_out = iteration.ignore_out()
     next(gen_out)
@@ -38,7 +40,7 @@ def test_iteration_adhoc_out():
     gen_out.send(b'')
     assert not list(gen_out)
 
-    stdout_list = []
+    stdout_list: typing.List[bytes] = []
     gen_out = iteration.collect_out(stdout_list)
     next(gen_out)
     gen_out.send(b'1')
@@ -49,7 +51,7 @@ def test_iteration_adhoc_out():
     assert not list(gen_out)
 
 
-def test_iteration_io_in():
+def test_iteration_io_in() -> None:
     open('/tmp/pyck_test_iteration_1', 'wb').write(b'hello\n')
     gen_in = iteration.stream_in(open('/tmp/pyck_test_iteration_1', 'rb'))
     assert list(gen_in) == [b'hello\n']
@@ -59,7 +61,7 @@ def test_iteration_io_in():
     assert list(gen_in) == [b'hello\n']
 
 
-def test_iteration_io_out():
+def test_iteration_io_out() -> None:
     gen_out = iteration.stream_out(open('/tmp/pyck_test_iteration_3', 'wb'))
     next(gen_out)
     gen_out.send(b'world\n')
@@ -73,7 +75,7 @@ def test_iteration_io_out():
     assert open('/tmp/pyck_test_iteration_4', 'rb').read() == b'world\n'
 
 
-def test_iteration_io_echo_io():
+def test_iteration_io_echo_io() -> None:
     read_stream, write_stream = iteration.echo_io()
 
     write_stream.write(b'hello\n')

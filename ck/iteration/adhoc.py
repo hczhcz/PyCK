@@ -40,8 +40,6 @@ def ignore_out() -> typing.Generator[None, bytes, None]:
 def collect_out(
         data_list: typing.List[bytes]
 ) -> typing.Generator[None, bytes, None]:
-    assert data_list == []
-
     data = yield
 
     while data:

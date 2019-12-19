@@ -1,27 +1,35 @@
 import io
+import typing
 
 # third-party
 import pandas
+import pytest_benchmark.fixture
+import typing_extensions
 
 import ck
 from ck import iteration
 
 
-def test_session_passive():
+methods: typing.List[
+    typing_extensions.Literal['tcp', 'http', 'ssh']
+] = ['tcp', 'http', 'ssh']
+
+
+def test_session_passive() -> None:
     local_session = ck.LocalSession()
     passive_session = ck.PassiveSession()
 
     local_session.stop()
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert not passive_session.ping(method=method)
 
     local_session.start()
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert passive_session.ping(method=method)
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert passive_session.query('select 1', method=method) == b'1\n'
         assert passive_session.query_async(
             'select 1',
@@ -29,11 +37,11 @@ def test_session_passive():
         )() == b'1\n'
 
 
-def test_session_local():
+def test_session_local() -> None:
     local_session = ck.LocalSession()
 
     pid_1 = local_session.stop()
-    assert pid_1 > 0
+    assert pid_1 is not None
     assert local_session.get_pid() is None
 
     pid_2 = local_session.stop()
@@ -41,14 +49,14 @@ def test_session_local():
     assert local_session.get_pid() is None
 
     pid_3 = local_session.start()
-    assert pid_3 > 0
-    assert local_session.get_pid() > 0
+    assert pid_3 is not None
+    assert local_session.get_pid() is not None
 
     pid_4 = local_session.start()
     assert pid_4 is None
     assert local_session.get_pid() == pid_3
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert local_session.query('select 1', method=method) == b'1\n'
         assert local_session.query_async(
             'select 1',
@@ -56,11 +64,11 @@ def test_session_local():
         )() == b'1\n'
 
 
-def test_session_remote():
+def test_session_remote() -> None:
     remote_session = ck.RemoteSession()
 
     pid_1 = remote_session.stop()
-    assert pid_1 > 0
+    assert pid_1 is not None
     assert remote_session.get_pid() is None
 
     pid_2 = remote_session.stop()
@@ -68,14 +76,14 @@ def test_session_remote():
     assert remote_session.get_pid() is None
 
     pid_3 = remote_session.start()
-    assert pid_3 > 0
-    assert remote_session.get_pid() > 0
+    assert pid_3 is not None
+    assert remote_session.get_pid() is not None
 
     pid_4 = remote_session.start()
     assert pid_4 is None
     assert remote_session.get_pid() == pid_3
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert remote_session.query('select 1', method=method) == b'1\n'
         assert remote_session.query_async(
             'select 1',
@@ -83,7 +91,7 @@ def test_session_remote():
         )() == b'1\n'
 
 
-def test_session_settings():
+def test_session_settings() -> None:
     local_session = ck.LocalSession()
 
     query_text = 'select isNull(y) ' \
@@ -91,7 +99,7 @@ def test_session_settings():
         'any left join (select 2 as x, 3 as y) ' \
         'using x'
 
-    for method in 'tcp', 'http', 'ssh':
+    for method in methods:
         assert local_session.query(
             query_text,
             method=method,
@@ -104,7 +112,7 @@ def test_session_settings():
         ) == b'1\n'
 
 
-def test_session_file():
+def test_session_file() -> None:
     local_session = ck.LocalSession()
 
     local_session.query('drop table if exists pyck_test')
@@ -125,7 +133,7 @@ def test_session_file():
     local_session.query('drop table pyck_test')
 
 
-def test_session_pandas():
+def test_session_pandas() -> None:
     local_session = ck.LocalSession()
 
     local_session.query('drop table if exists pyck_test')
@@ -152,10 +160,12 @@ def test_session_pandas():
     local_session.query('drop table pyck_test')
 
 
-def test_session_method_tcp_benchmark(benchmark):
+def test_session_method_tcp_benchmark(
+        benchmark: pytest_benchmark.fixture.BenchmarkFixture
+) -> None:
     local_session = ck.LocalSession()
 
-    def run():
+    def run() -> None:
         local_session.query(
             'select number from numbers(1000000)',
             method='tcp'
@@ -164,10 +174,12 @@ def test_session_method_tcp_benchmark(benchmark):
     benchmark(run)
 
 
-def test_session_method_http_benchmark(benchmark):
+def test_session_method_http_benchmark(
+        benchmark: pytest_benchmark.fixture.BenchmarkFixture
+) -> None:
     local_session = ck.LocalSession()
 
-    def run():
+    def run() -> None:
         local_session.query(
             'select number from numbers(1000000)',
             method='http'
@@ -176,10 +188,12 @@ def test_session_method_http_benchmark(benchmark):
     benchmark(run)
 
 
-def test_session_method_ssh_benchmark(benchmark):
+def test_session_method_ssh_benchmark(
+        benchmark: pytest_benchmark.fixture.BenchmarkFixture
+) -> None:
     local_session = ck.LocalSession()
 
-    def run():
+    def run() -> None:
         local_session.query(
             'select number from numbers(1000000)',
             method='ssh'

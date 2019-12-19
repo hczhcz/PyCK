@@ -1,6 +1,8 @@
 import typing
-import typing_extensions
 import urllib.parse
+
+# third-party
+import typing_extensions
 
 from ck import exception
 from ck import clickhouse
