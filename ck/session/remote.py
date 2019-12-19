@@ -18,9 +18,9 @@ class RemoteSession(passive.PassiveSession):
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
-            ssh_command_prefix: typing.List[str] = [],
+            ssh_command_prefix: typing.Optional[typing.List[str]] = None,
             data_dir: typing.Optional[str] = None,
-            config: typing.Dict[str, typing.Any] = {},
+            config: typing.Optional[typing.Dict[str, typing.Any]] = None,
             stop: bool = False,
             start: bool = True
     ) -> None:
@@ -44,7 +44,10 @@ class RemoteSession(passive.PassiveSession):
         else:
             self._path = pathlib.Path(data_dir)
 
-        self._config = config
+        if config is None:
+            self._config: typing.Dict[str, typing.Any] = {}
+        else:
+            self._config = config
 
         if stop:
             self.stop()

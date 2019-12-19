@@ -10,7 +10,7 @@ import ck
 from ck import iteration
 
 
-methods: typing.List[
+METHODS: typing.List[
     typing_extensions.Literal['tcp', 'http', 'ssh']
 ] = ['tcp', 'http', 'ssh']
 
@@ -21,15 +21,15 @@ def test_session_passive() -> None:
 
     local_session.stop()
 
-    for method in methods:
+    for method in METHODS:
         assert not passive_session.ping(method=method)
 
     local_session.start()
 
-    for method in methods:
+    for method in METHODS:
         assert passive_session.ping(method=method)
 
-    for method in methods:
+    for method in METHODS:
         assert passive_session.query('select 1', method=method) == b'1\n'
         assert passive_session.query_async(
             'select 1',
@@ -56,7 +56,7 @@ def test_session_local() -> None:
     assert pid_4 is None
     assert local_session.get_pid() == pid_3
 
-    for method in methods:
+    for method in METHODS:
         assert local_session.query('select 1', method=method) == b'1\n'
         assert local_session.query_async(
             'select 1',
@@ -83,7 +83,7 @@ def test_session_remote() -> None:
     assert pid_4 is None
     assert remote_session.get_pid() == pid_3
 
-    for method in methods:
+    for method in METHODS:
         assert remote_session.query('select 1', method=method) == b'1\n'
         assert remote_session.query_async(
             'select 1',
@@ -99,7 +99,7 @@ def test_session_settings() -> None:
         'any left join (select 2 as x, 3 as y) ' \
         'using x'
 
-    for method in methods:
+    for method in METHODS:
         assert local_session.query(
             query_text,
             method=method,

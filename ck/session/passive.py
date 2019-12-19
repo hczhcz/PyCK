@@ -20,7 +20,7 @@ class PassiveSession:
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
-            ssh_command_prefix: typing.List[str] = []
+            ssh_command_prefix: typing.Optional[typing.List[str]] = None,
     ) -> None:
         self._host = host
         self._tcp_port = tcp_port
@@ -29,7 +29,12 @@ class PassiveSession:
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
         self._ssh_public_key = ssh_public_key
-        self._ssh_command_prefix = ssh_command_prefix
+
+        if ssh_command_prefix is None:
+            self._ssh_command_prefix: typing.List[str] = []
+        else:
+            self._ssh_command_prefix = ssh_command_prefix
+
         self._ssh_client = None
         self._ssh_default_data_dir: typing.Optional[str] = None
         self._ssh_binary_file: typing.Optional[str] = None
@@ -83,7 +88,7 @@ class PassiveSession:
             gen_out: typing.Optional[
                 typing.Generator[None, bytes, None]
             ] = None,
-            settings: typing.Dict[str, str] = {}
+            settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], typing.Optional[bytes]]:
         # create connection(s)
 
@@ -105,6 +110,11 @@ class PassiveSession:
 
         gen_stderr = iteration.collect_out(stderr_list)
 
+        if settings is None:
+            full_settings: typing.Dict[str, str] = {}
+        else:
+            full_settings = settings
+
         if method == 'tcp':
             join_raw = connection.run_process(
                 [
@@ -114,7 +124,7 @@ class PassiveSession:
                     f'--port={self._tcp_port}',
                     *(
                         f'--{key}={value}'
-                        for key, value in settings.items()
+                        for key, value in full_settings.items()
                     ),
                 ],
                 gen_stdin,
@@ -126,7 +136,7 @@ class PassiveSession:
             join_raw = connection.run_http(
                 self._host,
                 self._http_port,
-                f'/?{urllib.parse.urlencode(settings)}',
+                f'/?{urllib.parse.urlencode(full_settings)}',
                 gen_stdin,
                 gen_stdout,
                 gen_stderr
@@ -146,7 +156,7 @@ class PassiveSession:
                     f'--port={self._tcp_port}',
                     *(
                         f'--{key}={value}'
-                        for key, value in settings.items()
+                        for key, value in full_settings.items()
                     ),
                 ],
                 gen_stdin,
@@ -182,7 +192,7 @@ class PassiveSession:
             gen_out: typing.Optional[
                 typing.Generator[None, bytes, None]
             ] = None,
-            settings: typing.Dict[str, str] = {}
+            settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Optional[bytes]:
         return self.query_async(
             query_text,
