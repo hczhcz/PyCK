@@ -1,4 +1,5 @@
 import io
+import sys
 import threading
 import typing
 
@@ -13,6 +14,12 @@ def stream_in(
         yield data
 
         data = stream.read(buffer_size)
+
+
+def pipe_in(
+        buffer_size: int = 1 << 20
+) -> typing.Generator[bytes, None, None]:
+    yield from stream_in(sys.stdin.buffer, buffer_size)
 
 
 def file_in(
@@ -35,6 +42,10 @@ def stream_out(
     stream.close()
 
     yield
+
+
+def pipe_out() -> typing.Generator[None, bytes, None]:
+    yield from stream_out(sys.stdout.buffer)
 
 
 def file_out(
