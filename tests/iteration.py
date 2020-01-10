@@ -56,6 +56,8 @@ def test_iteration_io_in() -> None:
     gen_in = iteration.stream_in(open('/tmp/pyck_test_iteration_1', 'rb'))
     assert list(gen_in) == [b'hello\n']
 
+    # TODO: test pipe_in
+
     open('/tmp/pyck_test_iteration_2', 'wb').write(b'hello\n')
     gen_in = iteration.file_in('/tmp/pyck_test_iteration_2')
     assert list(gen_in) == [b'hello\n']
@@ -67,6 +69,8 @@ def test_iteration_io_out() -> None:
     gen_out.send(b'world\n')
     gen_out.send(b'')
     assert open('/tmp/pyck_test_iteration_3', 'rb').read() == b'world\n'
+
+    # TODO: test pipe_out
 
     gen_out = iteration.file_out('/tmp/pyck_test_iteration_4')
     next(gen_out)
