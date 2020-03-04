@@ -4,6 +4,7 @@ import typing
 import pytest_benchmark.fixture  # type: ignore[import]
 
 import ck
+from ck import clickhouse
 from ck import connection
 from ck import iteration
 
@@ -13,7 +14,7 @@ def test_connection_process() -> None:
 
     stdout_list: typing.List[bytes] = []
     status = connection.run_process(
-        ['clickhouse', 'client'],
+        [clickhouse.binary_file(), 'client'],
         iteration.given_in([b'select 1']),
         iteration.collect_out(stdout_list),
         iteration.empty_out()
@@ -48,7 +49,7 @@ def test_connection_ssh() -> None:
     stdout_list: typing.List[bytes] = []
     status = connection.run_ssh(
         ssh_client,
-        ['clickhouse', 'client'],
+        [clickhouse.binary_file(), 'client'],
         iteration.given_in([b'select 1']),
         iteration.collect_out(stdout_list),
         iteration.empty_out()
@@ -65,7 +66,7 @@ def test_connection_process_benchmark(
 
     def run() -> None:
         connection.run_process(
-            ['clickhouse', 'client'],
+            [clickhouse.binary_file(), 'client'],
             iteration.given_in([b'select number from numbers(1000000)']),
             iteration.ignore_out(),
             iteration.empty_out()
@@ -102,7 +103,7 @@ def test_connection_ssh_benchmark(
     def run() -> None:
         connection.run_ssh(
             ssh_client,
-            ['clickhouse', 'client'],
+            [clickhouse.binary_file(), 'client'],
             iteration.given_in([b'select number from numbers(1000000)']),
             iteration.ignore_out(),
             iteration.empty_out()
