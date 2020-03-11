@@ -210,5 +210,7 @@ class PassiveSession:
             return self.query('select 42', method=method) == b'42\n'
         except ConnectionError:
             return False
+        except OSError:
+            return False
         except exception.QueryError:
             return False
