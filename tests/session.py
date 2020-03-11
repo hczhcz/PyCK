@@ -95,8 +95,8 @@ def test_session_settings() -> None:
     local_session = ck.LocalSession()
 
     query_text = 'select isNull(y) ' \
-        'from (select 1 as x) ' \
-        'any left join (select 2 as x, 3 as y) ' \
+        'from (select 1 as x) as lhs ' \
+        'any left join (select 2 as x, 3 as y) as rhs ' \
         'using x'
 
     for method in METHODS:
