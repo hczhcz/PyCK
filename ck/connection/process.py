@@ -27,6 +27,8 @@ def run_process(
     def send_stdin() -> None:
         nonlocal error
 
+        assert process.stdin
+
         try:
             for data in gen_stdin:
                 process.stdin.write(data)
@@ -37,6 +39,8 @@ def run_process(
 
     def receive_stdout() -> None:
         nonlocal error
+
+        assert process.stdout
 
         try:
             next(gen_stdout)
@@ -52,6 +56,8 @@ def run_process(
 
     def receive_stderr() -> None:
         nonlocal error
+
+        assert process.stderr
 
         try:
             next(gen_stderr)
