@@ -3,6 +3,9 @@ import pathlib
 import time
 import typing
 
+# third-party
+import typing_extensions
+
 from ck import clickhouse
 from ck import connection
 from ck import exception
@@ -22,8 +25,9 @@ class LocalSession(passive.PassiveSession):
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
             data_dir: typing.Optional[str] = None,
             config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            auto_start: bool = True,
             stop: bool = False,
-            start: bool = True
+            start: bool = False
     ) -> None:
         super().__init__(
             'localhost',
@@ -46,11 +50,36 @@ class LocalSession(passive.PassiveSession):
         else:
             self._config = config
 
+        self._auto_start = auto_start
+
         if stop:
             self.stop()
 
         if start:
             self.start()
+
+    def query_async(
+            self,
+            query_text: str,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            gen_in: typing.Optional[
+                typing.Generator[bytes, None, None]
+            ] = None,
+            gen_out: typing.Optional[
+                typing.Generator[None, bytes, None]
+            ] = None,
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> typing.Callable[[], typing.Optional[bytes]]:
+        if self._auto_start:
+            self.start()
+
+        return super().query_async(
+            query_text,
+            method,
+            gen_in,
+            gen_out,
+            settings
+        )
 
     def get_pid(self) -> typing.Optional[int]:
         pid_path = self._path.joinpath('pid')
