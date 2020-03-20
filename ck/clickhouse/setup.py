@@ -24,6 +24,7 @@ def create_config(
     memory_size = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     memory_bound_1 = int(0.6 * memory_size)
     memory_bound_2 = int(0.5 * memory_size)
+    memory_bound_3 = int(0.1 * memory_size)
 
     data = config.copy()
 
@@ -88,11 +89,26 @@ def create_config(
     if 'max_bytes_before_external_sort' not in profile:
         profile['max_bytes_before_external_sort'] = str(memory_bound_2)
 
+    if 'max_bytes_in_distinct' not in profile:
+        profile['max_bytes_in_distinct'] = str(memory_bound_2)
+
+    if 'max_bytes_before_remerge_sort' not in profile:
+        profile['max_bytes_before_remerge_sort'] = str(memory_bound_3)
+
+    if 'max_bytes_in_set' not in profile:
+        profile['max_bytes_in_set'] = str(memory_bound_3)
+
+    if 'max_bytes_in_join' not in profile:
+        profile['max_bytes_in_join'] = str(memory_bound_3)
+
     if 'log_queries' not in profile:
         profile['log_queries'] = '1'
 
     if 'join_use_nulls' not in profile:
         profile['join_use_nulls'] = '1'
+
+    if 'join_algorithm' not in profile:
+        profile['join_algorithm'] = 'auto'
 
     if 'input_format_allow_errors_num' not in profile:
         profile['input_format_allow_errors_num'] = '100'
