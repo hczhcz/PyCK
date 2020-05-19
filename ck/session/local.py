@@ -62,6 +62,7 @@ class LocalSession(passive.PassiveSession):
             self,
             query_text: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            data: typing.Optional[bytes] = None,
             gen_in: typing.Optional[
                 typing.Generator[bytes, None, None]
             ] = None,
@@ -76,6 +77,7 @@ class LocalSession(passive.PassiveSession):
         return super().query_async(
             query_text,
             method,
+            data,
             gen_in,
             gen_out,
             settings

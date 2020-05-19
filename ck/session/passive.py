@@ -82,6 +82,7 @@ class PassiveSession:
             self,
             query_text: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            data: typing.Optional[bytes] = None,
             gen_in: typing.Optional[
                 typing.Generator[bytes, None, None]
             ] = None,
@@ -96,7 +97,13 @@ class PassiveSession:
         stderr_list: typing.List[bytes] = []
 
         if gen_in is None:
-            gen_stdin = iteration.given_in([f'{query_text}\n'.encode()])
+            if data is None:
+                gen_stdin = iteration.given_in([f'{query_text}\n'.encode()])
+            else:
+                gen_stdin = iteration.given_in([
+                    f'{query_text}\n'.encode(),
+                    data,
+                ])
         else:
             gen_stdin = iteration.concat_in(
                 iteration.given_in([f'{query_text}\n'.encode()]),
@@ -186,6 +193,7 @@ class PassiveSession:
             self,
             query_text: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            data: typing.Optional[bytes] = None,
             gen_in: typing.Optional[
                 typing.Generator[bytes, None, None]
             ] = None,
@@ -197,6 +205,7 @@ class PassiveSession:
         return self.query_async(
             query_text,
             method,
+            data,
             gen_in,
             gen_out,
             settings

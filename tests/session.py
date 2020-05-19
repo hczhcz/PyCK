@@ -112,6 +112,24 @@ def test_session_settings() -> None:
         ) == b'1\n'
 
 
+def test_session_string() -> None:
+    local_session = ck.LocalSession()
+
+    local_session.query('drop table if exists pyck_test')
+    local_session.query('create table pyck_test (x String) engine = Memory')
+
+    local_session.query(
+        'insert into pyck_test format TSV',
+        data=b'hello\nworld\n'
+    )
+    assert local_session.query(
+        'select * from pyck_test format TSV',
+        gen_out=iteration.file_out('/tmp/pyck_test_session_2')
+    ) == b'hello\nworld\n'
+
+    local_session.query('drop table pyck_test')
+
+
 def test_session_file() -> None:
     local_session = ck.LocalSession()
 
