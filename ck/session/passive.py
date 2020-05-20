@@ -82,45 +82,25 @@ class PassiveSession:
     def _prepare(self) -> None:
         pass
 
-    def query_async(
+    def _run(
             self,
             query_text: str,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
-            data: typing.Optional[bytes] = None,
-            gen_in: typing.Optional[
-                typing.Generator[bytes, None, None]
-            ] = None,
-            gen_out: typing.Optional[
-                typing.Generator[None, bytes, None]
-            ] = None,
-            settings: typing.Optional[typing.Dict[str, str]] = None
-    ) -> typing.Callable[[], typing.Optional[bytes]]:
+            gen_in: typing.Generator[bytes, None, None],
+            gen_out: typing.Generator[None, bytes, None],
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'],
+            settings: typing.Optional[typing.Dict[str, str]]
+    ) -> typing.Callable[[], None]:
         self._prepare()
 
         # create connection(s)
 
-        stdout_list: typing.List[bytes] = []
         stderr_list: typing.List[bytes] = []
 
-        if gen_in is None:
-            if data is None:
-                gen_stdin = iteration.given_in([f'{query_text}\n'.encode()])
-            else:
-                gen_stdin = iteration.given_in([
-                    f'{query_text}\n'.encode(),
-                    data,
-                ])
-        else:
-            gen_stdin = iteration.concat_in(
-                iteration.given_in([f'{query_text}\n'.encode()]),
-                gen_in
-            )
-
-        if gen_out is None:
-            gen_stdout = iteration.collect_out(stdout_list)
-        else:
-            gen_stdout = gen_out
-
+        gen_stdin = iteration.concat_in(
+            iteration.given_in([f'{query_text}\n'.encode()]),
+            gen_in
+        )
+        gen_stdout = gen_out
         gen_stderr = iteration.collect_out(stderr_list)
 
         if settings is None:
@@ -129,7 +109,7 @@ class PassiveSession:
             full_settings = settings
 
         if method == 'tcp':
-            join_raw = connection.run_process(
+            join_inner = connection.run_process(
                 [
                     clickhouse.binary_file(),
                     'client',
@@ -146,7 +126,7 @@ class PassiveSession:
             )
             good_status = 0
         elif method == 'http':
-            join_raw = connection.run_http(
+            join_inner = connection.run_http(
                 self._host,
                 self._http_port,
                 f'/?{urllib.parse.urlencode(full_settings)}',
@@ -160,7 +140,7 @@ class PassiveSession:
 
             assert self._ssh_binary_file is not None
 
-            join_raw = connection.run_ssh(
+            join_inner = connection.run_ssh(
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
@@ -180,40 +160,135 @@ class PassiveSession:
 
         # join connection(s)
 
-        def join() -> typing.Optional[bytes]:
-            if join_raw() != good_status:
+        def join() -> None:
+            if join_inner() != good_status:
                 raise exception.QueryError(
                     self._host,
                     query_text,
                     b''.join(stderr_list).decode()
                 )
 
-            if gen_out is None:
-                return b''.join(stdout_list)
+        return join
 
-            return None
+    def query_async(
+            self,
+            query_text: str,
+            data: bytes = b'',
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> typing.Callable[[], bytes]:
+        stdout_list: typing.List[bytes] = []
+
+        join_inner = self._run(
+            query_text,
+            iteration.given_in([data]),
+            iteration.collect_out(stdout_list),
+            method,
+            settings
+        )
+
+        def join() -> bytes:
+            join_inner()
+
+            return b''.join(stdout_list)
 
         return join
 
     def query(
             self,
             query_text: str,
+            data: bytes = b'',
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
-            data: typing.Optional[bytes] = None,
-            gen_in: typing.Optional[
-                typing.Generator[bytes, None, None]
-            ] = None,
-            gen_out: typing.Optional[
-                typing.Generator[None, bytes, None]
-            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
-    ) -> typing.Optional[bytes]:
+    ) -> bytes:
         return self.query_async(
             query_text,
-            method,
             data,
+            method,
+            settings
+        )()
+
+    def query_with_stream_async(
+            self,
+            query_text: str,
+            stream_in: typing.Optional[typing.BinaryIO] = None,
+            stream_out: typing.Optional[typing.BinaryIO] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> typing.Callable[[], None]:
+        if stream_in is None:
+            gen_in = iteration.empty_in()
+        else:
+            gen_in = iteration.stream_in(stream_in)
+
+        if stream_out is None:
+            gen_out = iteration.empty_out()
+        else:
+            gen_out = iteration.stream_out(stream_out)
+
+        return self._run(
+            query_text,
             gen_in,
             gen_out,
+            method,
+            settings
+        )
+
+    def query_with_stream(
+            self,
+            query_text: str,
+            stream_in: typing.Optional[typing.BinaryIO] = None,
+            stream_out: typing.Optional[typing.BinaryIO] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> None:
+        self.query_with_stream_async(
+            query_text,
+            stream_in,
+            stream_out,
+            method,
+            settings
+        )()
+
+    def query_with_file_async(
+            self,
+            query_text: str,
+            path_in: typing.Optional[str] = None,
+            path_out: typing.Optional[str] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> typing.Callable[[], None]:
+        if path_in is None:
+            gen_in = iteration.empty_in()
+        else:
+            gen_in = iteration.file_in(path_in)
+
+        if path_out is None:
+            gen_out = iteration.empty_out()
+        else:
+            gen_out = iteration.file_out(path_out)
+
+        return self._run(
+            query_text,
+            gen_in,
+            gen_out,
+            method,
+            settings
+        )
+
+    def query_with_file(
+            self,
+            query_text: str,
+            path_in: typing.Optional[str] = None,
+            path_out: typing.Optional[str] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> None:
+        self.query_with_file_async(
+            query_text,
+            path_in,
+            path_out,
+            method,
             settings
         )()
 
