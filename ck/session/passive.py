@@ -2,6 +2,7 @@ import typing
 import urllib.parse
 
 # third-party
+# import pyarrow  # type: ignore[import]
 import typing_extensions
 
 from ck import exception
@@ -78,6 +79,9 @@ class PassiveSession:
             self._ssh_binary_file,
         ) = b''.join(stdout_list).decode().splitlines()
 
+    def _prepare(self) -> None:
+        pass
+
     def query_async(
             self,
             query_text: str,
@@ -91,6 +95,8 @@ class PassiveSession:
             ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], typing.Optional[bytes]]:
+        self._prepare()
+
         # create connection(s)
 
         stdout_list: typing.List[bytes] = []
