@@ -8,7 +8,7 @@ import paramiko  # type: ignore[import]
 
 def connect_ssh(
         host: str,
-        port: int = 22,
+        port: int,
         username: typing.Optional[str] = None,
         password: typing.Optional[str] = None,
         public_key: typing.Optional[str] = None
