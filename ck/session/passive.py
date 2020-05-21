@@ -1,8 +1,10 @@
+import threading
 import typing
 import urllib.parse
 
 # third-party
-# import pyarrow  # type: ignore[import]
+import pandas  # type: ignore[import]
+import pyarrow  # type: ignore[import]
 import typing_extensions
 
 from ck import exception
@@ -109,7 +111,7 @@ class PassiveSession:
             full_settings = settings
 
         if method == 'tcp':
-            join_inner = connection.run_process(
+            raw_join = connection.run_process(
                 [
                     clickhouse.binary_file(),
                     'client',
@@ -126,7 +128,7 @@ class PassiveSession:
             )
             good_status = 0
         elif method == 'http':
-            join_inner = connection.run_http(
+            raw_join = connection.run_http(
                 self._host,
                 self._http_port,
                 f'/?{urllib.parse.urlencode(full_settings)}',
@@ -140,7 +142,7 @@ class PassiveSession:
 
             assert self._ssh_binary_file is not None
 
-            join_inner = connection.run_ssh(
+            raw_join = connection.run_ssh(
                 self._ssh_client,
                 [
                     *self._ssh_command_prefix,
@@ -161,7 +163,7 @@ class PassiveSession:
         # join connection(s)
 
         def join() -> None:
-            if join_inner() != good_status:
+            if raw_join() != good_status:
                 raise exception.QueryError(
                     self._host,
                     query_text,
@@ -179,7 +181,7 @@ class PassiveSession:
     ) -> typing.Callable[[], bytes]:
         stdout_list: typing.List[bytes] = []
 
-        join_inner = self._run(
+        raw_join = self._run(
             query_text,
             iteration.given_in([data]),
             iteration.collect_out(stdout_list),
@@ -188,7 +190,7 @@ class PassiveSession:
         )
 
         def join() -> bytes:
-            join_inner()
+            raw_join()
 
             return b''.join(stdout_list)
 
@@ -290,6 +292,94 @@ class PassiveSession:
             path_out,
             method,
             settings
+        )()
+
+    def query_with_pandas_async(
+            self,
+            query_text: str,
+            dataframe: typing.Optional[pandas.DataFrame] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None,
+            join_interval: float = 0.1
+    ) -> typing.Callable[[], typing.Optional[pandas.DataFrame]]:
+        batch = None
+        error = None
+
+        # prepare
+
+        read_stream, write_stream = iteration.echo_io()
+
+        if dataframe is None:
+            gen_in = iteration.empty_in()
+            gen_out = iteration.stream_out(write_stream)
+        else:
+            gen_in = iteration.stream_in(read_stream)
+            gen_out = iteration.empty_out()
+
+        raw_join = self._run(
+            f'{query_text} format ArrowStream',
+            gen_in,
+            gen_out,
+            method,
+            settings
+        )
+
+        # create thread
+
+        def handle_batch() -> None:
+            nonlocal dataframe
+            nonlocal batch
+            nonlocal error
+
+            try:
+                if dataframe is None:
+                    batch = pyarrow.RecordBatchStreamReader(read_stream)
+                    dataframe = batch.read_pandas()
+                else:
+                    batch = pyarrow.RecordBatchStreamWriter(write_stream)
+                    batch.write_table(pyarrow.Table.from_pandas(dataframe))
+                    dataframe = None
+                    batch.close()
+
+            except BaseException as raw_error:  # pylint: disable=broad-except
+                error = raw_error
+
+        thread = threading.Thread(target=handle_batch)
+
+        thread.start()
+
+        # join thread
+
+        def join() -> typing.Optional[pandas.DataFrame]:
+            while error is None and thread.is_alive():
+                thread.join(join_interval)
+
+            if error is not None:
+                if batch is not None:
+                    batch.close()
+
+                raise error  # pylint: disable=raising-bad-type
+
+            raw_join()
+
+            return dataframe
+
+        return join
+
+    def query_with_pandas(
+            self,
+            query_text: str,
+            dataframe: typing.Optional[pandas.DataFrame] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None,
+            join_interval: float = 0.1
+    ) -> typing.Optional[pandas.DataFrame]:
+        return self.query_with_pandas_async(
+            query_text,
+            dataframe,
+            method,
+            settings,
+            join_interval
         )()
 
     def ping(
