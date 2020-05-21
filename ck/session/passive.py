@@ -336,8 +336,9 @@ class PassiveSession:
                     batch = pyarrow.RecordBatchStreamReader(read_stream)
                     dataframe = batch.read_pandas()
                 else:
-                    batch = pyarrow.RecordBatchStreamWriter(write_stream)
-                    batch.write_table(pyarrow.Table.from_pandas(dataframe))
+                    table = pyarrow.Table.from_pandas(dataframe)
+                    batch = pyarrow.RecordBatchStreamWriter(write_stream, table.schema)
+                    batch.write_table(table)
                     dataframe = None
                     batch.close()
 

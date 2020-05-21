@@ -177,6 +177,27 @@ def test_session_stream_pandas() -> None:
     local_session.query('drop table pyck_test')
 
 
+def test_session_pandas() -> None:
+    local_session = ck.LocalSession(start=True)
+
+    local_session.query('drop table if exists pyck_test')
+    local_session.query('create table pyck_test (x String) engine = Memory')
+
+    dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
+
+    local_session.query_with_pandas(
+        'insert into pyck_test',
+        dataframe=dataframe_1
+    )
+    dataframe_2 = local_session.query_with_pandas(
+        'select * from pyck_test',
+        stream_out=write_stream
+    )
+    assert dataframe_2.x.to_list() == dataframe_1.x.to_list()
+
+    local_session.query('drop table pyck_test')
+
+
 def test_session_method_tcp_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
