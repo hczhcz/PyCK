@@ -112,7 +112,7 @@ def test_session_settings() -> None:
         ) == b'1\n'
 
 
-def test_session_string() -> None:
+def test_session_with_string() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
@@ -129,32 +129,11 @@ def test_session_string() -> None:
     local_session.query('drop table pyck_test')
 
 
-def test_session_file() -> None:
+def test_session_with_stream() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
-    local_session.query('create table pyck_test (x String) engine = Memory')
-
-    open('/tmp/pyck_test_session_1', 'wb').write(b'hello\nworld\n')
-    local_session.query_with_file(
-        'insert into pyck_test format TSV',
-        path_in='/tmp/pyck_test_session_1'
-    )
-    open('/tmp/pyck_test_session_2', 'wb').write(b'')
-    local_session.query_with_file(
-        'select * from pyck_test format TSV',
-        path_out='/tmp/pyck_test_session_2'
-    )
-    assert open('/tmp/pyck_test_session_2', 'rb').read() == b'hello\nworld\n'
-
-    local_session.query('drop table pyck_test')
-
-
-def test_session_stream_pandas() -> None:
-    local_session = ck.LocalSession(start=True)
-
-    local_session.query('drop table if exists pyck_test')
-    local_session.query('create table pyck_test (x String) engine = Memory')
+    local_session.query('create table pyck_test (x Int64) engine = Memory')
 
     dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
 
@@ -177,11 +156,32 @@ def test_session_stream_pandas() -> None:
     local_session.query('drop table pyck_test')
 
 
-def test_session_pandas() -> None:
+def test_session_with_file() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x String) engine = Memory')
+
+    open('/tmp/pyck_test_session_1', 'wb').write(b'hello\nworld\n')
+    local_session.query_with_file(
+        'insert into pyck_test format TSV',
+        path_in='/tmp/pyck_test_session_1'
+    )
+    open('/tmp/pyck_test_session_2', 'wb').write(b'')
+    local_session.query_with_file(
+        'select * from pyck_test format TSV',
+        path_out='/tmp/pyck_test_session_2'
+    )
+    assert open('/tmp/pyck_test_session_2', 'rb').read() == b'hello\nworld\n'
+
+    local_session.query('drop table pyck_test')
+
+
+def test_session_with_pandas() -> None:
+    local_session = ck.LocalSession(start=True)
+
+    local_session.query('drop table if exists pyck_test')
+    local_session.query('create table pyck_test (x Int64) engine = Memory')
 
     dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
 
