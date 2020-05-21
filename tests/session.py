@@ -189,10 +189,8 @@ def test_session_pandas() -> None:
         'insert into pyck_test',
         dataframe=dataframe_1
     )
-    dataframe_2 = local_session.query_with_pandas(
-        'select * from pyck_test',
-        stream_out=write_stream
-    )
+    dataframe_2 = local_session.query_with_pandas('select * from pyck_test')
+    assert dataframe_2 is not None
     assert dataframe_2.x.to_list() == dataframe_1.x.to_list()
 
     local_session.query('drop table pyck_test')

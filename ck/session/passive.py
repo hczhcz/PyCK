@@ -181,13 +181,10 @@ class PassiveSession:
     ) -> typing.Callable[[], bytes]:
         stdout_list: typing.List[bytes] = []
 
-        raw_join = self._run(
-            query_text,
-            iteration.given_in([data]),
-            iteration.collect_out(stdout_list),
-            method,
-            settings
-        )
+        gen_in = iteration.given_in([data])
+        gen_out = iteration.collect_out(stdout_list)
+
+        raw_join = self._run(query_text, gen_in, gen_out, method, settings)
 
         def join() -> bytes:
             raw_join()
@@ -203,12 +200,7 @@ class PassiveSession:
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> bytes:
-        return self.query_async(
-            query_text,
-            data,
-            method,
-            settings
-        )()
+        return self.query_async(query_text, data, method, settings)()
 
     def query_with_stream_async(
             self,
@@ -228,13 +220,7 @@ class PassiveSession:
         else:
             gen_out = iteration.stream_out(stream_out)
 
-        return self._run(
-            query_text,
-            gen_in,
-            gen_out,
-            method,
-            settings
-        )
+        return self._run(query_text, gen_in, gen_out, method, settings)
 
     def query_with_stream(
             self,
@@ -270,13 +256,7 @@ class PassiveSession:
         else:
             gen_out = iteration.file_out(path_out)
 
-        return self._run(
-            query_text,
-            gen_in,
-            gen_out,
-            method,
-            settings
-        )
+        return self._run(query_text, gen_in, gen_out, method, settings)
 
     def query_with_file(
             self,
@@ -337,10 +317,14 @@ class PassiveSession:
                     dataframe = batch.read_pandas()
                 else:
                     table = pyarrow.Table.from_pandas(dataframe)
-                    batch = pyarrow.RecordBatchStreamWriter(write_stream, table.schema)
+                    batch = pyarrow.RecordBatchStreamWriter(
+                        write_stream,
+                        table.schema
+                    )
                     batch.write_table(table)
                     dataframe = None
                     batch.close()
+                    write_stream.close()
 
             except BaseException as raw_error:  # pylint: disable=broad-except
                 error = raw_error
@@ -356,9 +340,6 @@ class PassiveSession:
                 thread.join(join_interval)
 
             if error is not None:
-                if batch is not None:
-                    batch.close()
-
                 raise error  # pylint: disable=raising-bad-type
 
             raw_join()
