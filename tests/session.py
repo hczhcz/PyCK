@@ -112,7 +112,7 @@ def test_session_settings() -> None:
         ) == b'1\n'
 
 
-def test_session_with_string() -> None:
+def test_session_gen_bytes() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
@@ -129,7 +129,7 @@ def test_session_with_string() -> None:
     local_session.query('drop table pyck_test')
 
 
-def test_session_with_stream() -> None:
+def test_session_gen_stream() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
@@ -138,14 +138,14 @@ def test_session_with_stream() -> None:
     dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
 
     read_stream, write_stream = iteration.echo_io()
-    join = local_session.query_with_stream_async(
+    join = local_session.query_stream_async(
         'insert into pyck_test format CSVWithNames',
         stream_in=read_stream
     )
     dataframe_1.to_csv(io.TextIOWrapper(write_stream), index=False)
     join()
     read_stream, write_stream = iteration.echo_io()
-    join = local_session.query_with_stream_async(
+    join = local_session.query_stream_async(
         'select * from pyck_test format CSVWithNames',
         stream_out=write_stream
     )
@@ -156,19 +156,19 @@ def test_session_with_stream() -> None:
     local_session.query('drop table pyck_test')
 
 
-def test_session_with_file() -> None:
+def test_session_gen_file() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x String) engine = Memory')
 
     open('/tmp/pyck_test_session_1', 'wb').write(b'hello\nworld\n')
-    local_session.query_with_file(
+    local_session.query_file(
         'insert into pyck_test format TSV',
         path_in='/tmp/pyck_test_session_1'
     )
     open('/tmp/pyck_test_session_2', 'wb').write(b'')
-    local_session.query_with_file(
+    local_session.query_file(
         'select * from pyck_test format TSV',
         path_out='/tmp/pyck_test_session_2'
     )
@@ -177,7 +177,7 @@ def test_session_with_file() -> None:
     local_session.query('drop table pyck_test')
 
 
-def test_session_with_pandas() -> None:
+def test_session_gen_pandas() -> None:
     local_session = ck.LocalSession(start=True)
 
     local_session.query('drop table if exists pyck_test')
@@ -185,11 +185,11 @@ def test_session_with_pandas() -> None:
 
     dataframe_1 = pandas.DataFrame({'x': pandas.RangeIndex(1000000)})
 
-    local_session.query_with_pandas(
+    local_session.query_pandas(
         'insert into pyck_test',
         dataframe=dataframe_1
     )
-    dataframe_2 = local_session.query_with_pandas('select * from pyck_test')
+    dataframe_2 = local_session.query_pandas('select * from pyck_test')
     assert dataframe_2 is not None
     assert dataframe_2.x.to_list() == dataframe_1.x.to_list()
 

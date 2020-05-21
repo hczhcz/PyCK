@@ -202,7 +202,7 @@ class PassiveSession:
     ) -> bytes:
         return self.query_async(query_text, data, method, settings)()
 
-    def query_with_stream_async(
+    def query_stream_async(
             self,
             query_text: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
@@ -222,7 +222,7 @@ class PassiveSession:
 
         return self._run(query_text, gen_in, gen_out, method, settings)
 
-    def query_with_stream(
+    def query_stream(
             self,
             query_text: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
@@ -230,7 +230,7 @@ class PassiveSession:
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
-        self.query_with_stream_async(
+        self.query_stream_async(
             query_text,
             stream_in,
             stream_out,
@@ -238,7 +238,7 @@ class PassiveSession:
             settings
         )()
 
-    def query_with_file_async(
+    def query_file_async(
             self,
             query_text: str,
             path_in: typing.Optional[str] = None,
@@ -258,7 +258,7 @@ class PassiveSession:
 
         return self._run(query_text, gen_in, gen_out, method, settings)
 
-    def query_with_file(
+    def query_file(
             self,
             query_text: str,
             path_in: typing.Optional[str] = None,
@@ -266,7 +266,7 @@ class PassiveSession:
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
-        self.query_with_file_async(
+        self.query_file_async(
             query_text,
             path_in,
             path_out,
@@ -274,7 +274,7 @@ class PassiveSession:
             settings
         )()
 
-    def query_with_pandas_async(
+    def query_pandas_async(
             self,
             query_text: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
@@ -348,7 +348,7 @@ class PassiveSession:
 
         return join
 
-    def query_with_pandas(
+    def query_pandas(
             self,
             query_text: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
@@ -356,7 +356,7 @@ class PassiveSession:
             settings: typing.Optional[typing.Dict[str, str]] = None,
             join_interval: float = 0.1
     ) -> typing.Optional[pandas.DataFrame]:
-        return self.query_with_pandas_async(
+        return self.query_pandas_async(
             query_text,
             dataframe,
             method,
