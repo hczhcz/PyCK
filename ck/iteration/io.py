@@ -72,36 +72,37 @@ def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
             if self.closed:  # pylint: disable=using-constant-test
                 raise ValueError()
 
-            if write_stream.closed and buffered_data is None:
-                return 0
-
             offset = 0
 
             full_semaphore.acquire()
 
-            while offset < len(data) and not write_stream.closed:
-                size = min(len(data) - offset, len(buffered_data))
+            while offset < len(data) and buffered_data is not None:
+                if offset + len(buffered_data) < len(data):
+                    new_offset = offset + len(buffered_data)
 
-                if offset + size < len(data):
-                    data[offset:offset + size] = buffered_data
+                    data[offset:new_offset] = buffered_data
                     buffered_data = None
 
                     empty_semaphore.release()
                     full_semaphore.acquire()
-                elif offset + size == len(data):
+                elif offset + len(buffered_data) == len(data):
+                    new_offset = len(data)
+
                     data[offset:] = buffered_data
                     buffered_data = None
-
-                    empty_semaphore.release()
                 else:
-                    assert buffered_data is not None
+                    new_offset = len(data)
 
-                    data[offset:] = buffered_data[:size]
-                    buffered_data = buffered_data[size:]
+                    # pylint: disable=unsubscriptable-object
+                    data[offset:] = buffered_data[:new_offset - offset]
+                    buffered_data = buffered_data[new_offset - offset:]
 
-                    full_semaphore.release()
+                offset = new_offset
 
-                offset += size
+            if buffered_data is None and not write_stream.closed:
+                empty_semaphore.release()
+            else:
+                full_semaphore.release()
 
             return offset
 
