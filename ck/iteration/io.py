@@ -55,8 +55,8 @@ def file_out(
 
 
 def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
-    read_semaphore = threading.Semaphore(0)
-    write_semaphore = threading.Semaphore(1)
+    empty_semaphore = threading.Semaphore(1)
+    full_semaphore = threading.Semaphore(0)
     buffered_data: typing.Optional[bytes] = None
 
     class ReadIO(io.RawIOBase):
@@ -75,25 +75,35 @@ def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
             if write_stream.closed and buffered_data is None:
                 return 0
 
-            read_semaphore.acquire()
+            offset = 0
 
-            assert buffered_data is not None
+            full_semaphore.acquire()
 
-            size = min(len(data), len(buffered_data))
+            while offset < len(data) and not write_stream.closed:
+                size = min(len(data) - offset, len(buffered_data))
 
-            if size < len(buffered_data):
-                # pylint: disable=unsubscriptable-object
-                data[:size] = buffered_data[:size]
-                buffered_data = buffered_data[size:]
+                if offset + size < len(data):
+                    data[offset:offset + size] = buffered_data
+                    buffered_data = None
 
-                read_semaphore.release()
-            else:
-                data[:size] = buffered_data
-                buffered_data = None
+                    empty_semaphore.release()
+                    full_semaphore.acquire()
+                elif offset + size == len(data):
+                    data[offset:] = buffered_data
+                    buffered_data = None
 
-                write_semaphore.release()
+                    empty_semaphore.release()
+                else:
+                    assert buffered_data is not None
 
-            return size
+                    data[offset:] = buffered_data[:size]
+                    buffered_data = buffered_data[size:]
+
+                    full_semaphore.release()
+
+                offset += size
+
+            return offset
 
     class WriteIO(io.RawIOBase):
         def writable(self) -> bool:
@@ -108,14 +118,19 @@ def echo_io() -> typing.Tuple[typing.BinaryIO, typing.BinaryIO]:
             if self.closed or read_stream.closed:
                 raise ValueError()
 
-            write_semaphore.acquire()
+            empty_semaphore.acquire()
 
             size = len(data)
             buffered_data = data
 
-            read_semaphore.release()
+            full_semaphore.release()
 
             return size
+
+        def close(self) -> None:
+            super().close()
+
+            full_semaphore.release()
 
     # TODO: better solution?
     read_stream = typing.cast(typing.BinaryIO, ReadIO())
