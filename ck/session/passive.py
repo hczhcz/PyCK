@@ -238,6 +238,29 @@ class PassiveSession:
             settings
         )()
 
+    def query_pipe_async(
+            self,
+            query_text: str,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> typing.Callable[[], None]:
+        gen_in = iteration.pipe_in()
+        gen_out = iteration.pipe_out()
+
+        return self._run(query_text, gen_in, gen_out, method, settings)
+
+    def query_pipe(
+            self,
+            query_text: str,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None
+    ) -> None:
+        self.query_pipe_async(
+            query_text,
+            method,
+            settings
+        )()
+
     def query_file_async(
             self,
             query_text: str,

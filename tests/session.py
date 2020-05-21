@@ -156,6 +156,9 @@ def test_session_gen_stream() -> None:
     local_session.query('drop table pyck_test')
 
 
+# TODO: test query_pipe
+
+
 def test_session_gen_file() -> None:
     local_session = ck.LocalSession(start=True)
 
