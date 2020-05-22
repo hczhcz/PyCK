@@ -11,8 +11,6 @@ Usage
 
 ```python
 import ck
-from ck import iteration
-import pandas as pd
 
 # start a local ClickHouse server
 # the default data directory is ~/.ck_data
@@ -34,15 +32,12 @@ print(session.query('select 1 as x, 2 as y format Pretty').decode())
 # create a table
 session.query('create table test (x Int32) engine=Memory')
 
-# read data from a file
-session.query(
+# save data from a file to a table
+session.query_file(
     'insert into test format CSV',
-    gen_in=iteration.file_in('1.csv')
+    path_in='1.csv'
 )
 
-# write data to a file
-session.query(
-    'select * from test format CSV',
-    gen_out=iteration.file_out('2.csv')
-)
+# load data from a table to a dataframe
+print(session.query_pandas('select * from test'))
 ```
