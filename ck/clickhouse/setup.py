@@ -58,13 +58,13 @@ def create_config(
     assert isinstance(data['profiles'], dict)
 
     data['profiles'] = {
-        user: {},
+        'default': {},
         **data['profiles'],
     }
 
-    assert isinstance(data['profiles'][user], dict)
+    assert isinstance(data['profiles']['default'], dict)
 
-    data['profiles'][user] = {
+    data['profiles']['default'] = {
         'max_memory_usage_for_all_queries': str(memory_bound_1),
         'max_memory_usage': str(memory_bound_1),
         'max_bytes_before_external_group_by': str(memory_bound_2),
@@ -79,7 +79,7 @@ def create_config(
         'input_format_allow_errors_num': '100',
         'input_format_allow_errors_ratio': '0.01',
         'date_time_input_format': 'best_effort',
-        **data['profiles'][user],
+        **data['profiles']['default'],
     }
 
     # add user
@@ -94,8 +94,8 @@ def create_config(
     assert isinstance(data['users'][user], dict)
 
     data['users'][user] = {
-        'profile': user,
-        'quota': user,
+        'profile': 'default',
+        'quota': 'default',
         'password': password,
         'networks': {
             'ip': '::/0',
@@ -108,7 +108,7 @@ def create_config(
     assert isinstance(data['quotas'], dict)
 
     data['quotas'] = {
-        user: {},
+        'default': {},
         **data['quotas'],
     }
 
