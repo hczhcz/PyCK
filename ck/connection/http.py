@@ -7,6 +7,7 @@ def run_http(
         host: str,
         port: int,
         path: str,
+        headers: typing.Dict[str, str],
         gen_stdin: typing.Generator[bytes, None, None],
         gen_stdout: typing.Generator[None, bytes, None],
         gen_stderr: typing.Generator[None, bytes, None],
@@ -26,7 +27,7 @@ def run_http(
 
         try:
             connection = http.client.HTTPConnection(host, port)
-            connection.request('POST', path, gen_stdin)
+            connection.request('POST', path, gen_stdin, headers)
 
             response = connection.getresponse()
 
