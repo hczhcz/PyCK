@@ -21,7 +21,8 @@ class PassiveSession:
             http_port: int = 8123,
             user: str = 'default',
             password: str = '',
-            default_settings: typing.Optional[typing.Dict[str, str]] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None,
             ssh_port: int = 22,
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
@@ -33,7 +34,8 @@ class PassiveSession:
         self._http_port = http_port
         self._user = user
         self._password = password
-        self._default_settings = default_settings or {}
+        self._method = method
+        self._settings = settings or {}
         self._ssh_port = ssh_port
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
@@ -91,7 +93,9 @@ class PassiveSession:
             query: str,
             gen_in: typing.Generator[bytes, None, None],
             gen_out: typing.Generator[None, bytes, None],
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'],
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ],
             settings: typing.Optional[typing.Dict[str, str]]
     ) -> typing.Callable[[], None]:
         self._prepare()
@@ -107,12 +111,13 @@ class PassiveSession:
         gen_stdout = gen_out
         gen_stderr = iteration.collect_out(stderr_list)
 
-        full_settings = {
-            **self._default_settings,
+        real_method = method or self._method
+        real_settings = {
+            **self._settings,
             **(settings or {}),
         }
 
-        if method == 'tcp':
+        if real_method == 'tcp':
             raw_join = connection.run_process(
                 [
                     clickhouse.binary_file(),
@@ -120,10 +125,14 @@ class PassiveSession:
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
                     f'--user={self._user}',
-                    f'--password={self._password}',
+                    *(
+                        (f'--password={self._password}',)
+                        if self._password
+                        else ()
+                    ),
                     *(
                         f'--{key}={value}'
-                        for key, value in full_settings.items()
+                        for key, value in real_settings.items()
                     ),
                 ],
                 gen_stdin,
@@ -131,11 +140,11 @@ class PassiveSession:
                 gen_stderr
             )
             good_status = 0
-        elif method == 'http':
+        elif real_method == 'http':
             raw_join = connection.run_http(
                 self._host,
                 self._http_port,
-                f'/?{urllib.parse.urlencode(full_settings)}',
+                f'/?{urllib.parse.urlencode(real_settings)}',
                 {
                     'X-ClickHouse-User': self._user,
                     'X-ClickHouse-Key': self._password,
@@ -145,7 +154,7 @@ class PassiveSession:
                 gen_stderr
             )
             good_status = 200
-        elif method == 'ssh':
+        elif real_method == 'ssh':
             self._require_ssh()
 
             assert self._ssh_binary_file is not None
@@ -161,7 +170,7 @@ class PassiveSession:
                     f'--password={self._password}',
                     *(
                         f'--{key}={value}'
-                        for key, value in full_settings.items()
+                        for key, value in real_settings.items()
                     ),
                 ],
                 gen_stdin,
@@ -186,7 +195,9 @@ class PassiveSession:
             self,
             query: str,
             data: bytes = b'',
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], bytes]:
         stdout_list: typing.List[bytes] = []
@@ -207,7 +218,9 @@ class PassiveSession:
             self,
             query: str,
             data: bytes = b'',
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> bytes:
         return self.query_async(query, data, method, settings)()
@@ -217,7 +230,9 @@ class PassiveSession:
             query: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
             stream_out: typing.Optional[typing.BinaryIO] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], None]:
         if stream_in is None:
@@ -237,7 +252,9 @@ class PassiveSession:
             query: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
             stream_out: typing.Optional[typing.BinaryIO] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_stream_async(
@@ -251,7 +268,9 @@ class PassiveSession:
     def query_pipe_async(
             self,
             query: str,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], None]:
         gen_in = iteration.pipe_in()
@@ -262,7 +281,9 @@ class PassiveSession:
     def query_pipe(
             self,
             query: str,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_pipe_async(
@@ -276,7 +297,9 @@ class PassiveSession:
             query: str,
             path_in: typing.Optional[str] = None,
             path_out: typing.Optional[str] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], None]:
         if path_in is None:
@@ -296,7 +319,9 @@ class PassiveSession:
             query: str,
             path_in: typing.Optional[str] = None,
             path_out: typing.Optional[str] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_file_async(
@@ -311,7 +336,9 @@ class PassiveSession:
             self,
             query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None,
             join_interval: float = 0.1
     ) -> typing.Callable[[], typing.Optional[pandas.DataFrame]]:
@@ -385,7 +412,9 @@ class PassiveSession:
             self,
             query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None,
             settings: typing.Optional[typing.Dict[str, str]] = None,
             join_interval: float = 0.1
     ) -> typing.Optional[pandas.DataFrame]:
@@ -399,7 +428,9 @@ class PassiveSession:
 
     def ping(
             self,
-            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http'
+            method: typing.Optional[
+                typing_extensions.Literal['tcp', 'http', 'ssh']
+            ] = None
     ) -> bool:
         try:
             return self.query('select 42', method=method) == b'42\n'

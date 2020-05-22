@@ -2,6 +2,9 @@ import pathlib
 import time
 import typing
 
+# third-party
+import typing_extensions
+
 from ck import connection
 from ck import exception
 from ck import iteration
@@ -16,7 +19,8 @@ class RemoteSession(passive.PassiveSession):
             http_port: int = 8123,
             user: str = 'default',
             password: str = '',
-            default_settings: typing.Optional[typing.Dict[str, str]] = None,
+            method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
+            settings: typing.Optional[typing.Dict[str, str]] = None,
             ssh_port: int = 22,
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
@@ -34,7 +38,8 @@ class RemoteSession(passive.PassiveSession):
             http_port,
             user,
             password,
-            default_settings,
+            method,
+            settings,
             ssh_port,
             ssh_username,
             ssh_password,
