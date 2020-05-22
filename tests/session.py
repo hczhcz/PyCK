@@ -21,9 +21,17 @@ def test_session_passive() -> None:
         http_port=8124,
         user='test1',
         password='test2',
-        stop=True
+        stop=True,
+        start=True
     )
-    passive_session = ck.PassiveSession()
+    passive_session = ck.PassiveSession(
+        tcp_port=9001,
+        http_port=8124,
+        user='test1',
+        password='test2'
+    )
+
+    local_session.stop()
 
     for method in METHODS:
         assert not passive_session.ping(method=method)
@@ -47,7 +55,8 @@ def test_session_local() -> None:
         http_port=8124,
         user='test1',
         password='test2',
-        stop=True
+        stop=True,
+        start=True
     )
 
     pid_1 = local_session.stop()
@@ -80,7 +89,8 @@ def test_session_remote() -> None:
         http_port=8124,
         user='test1',
         password='test2',
-        stop=True
+        stop=True,
+        start=True
     )
 
     pid_1 = remote_session.stop()
