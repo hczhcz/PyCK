@@ -8,6 +8,8 @@ import xml.etree.ElementTree
 def create_config(
         tcp_port: int,
         http_port: int,
+        user: str,
+        password: str,
         data_dir: str,
         # notice: recursive type
         config: typing.Dict[str, typing.Any]
@@ -65,87 +67,93 @@ def create_config(
 
     # add default profile
 
+    def setup_profile(
+            data: typing.Dict[str, typing.Any]
+    ) -> None:
+        if 'max_memory_usage_for_all_queries' not in data:
+            data['max_memory_usage_for_all_queries'] = str(memory_bound_1)
+
+        if 'max_memory_usage' not in data:
+            data['max_memory_usage'] = str(memory_bound_1)
+
+        if 'max_bytes_before_external_group_by' not in data:
+            data['max_bytes_before_external_group_by'] = str(memory_bound_2)
+
+        if 'max_bytes_before_external_sort' not in data:
+            data['max_bytes_before_external_sort'] = str(memory_bound_2)
+
+        if 'max_bytes_in_distinct' not in data:
+            data['max_bytes_in_distinct'] = str(memory_bound_2)
+
+        if 'max_bytes_before_remerge_sort' not in data:
+            data['max_bytes_before_remerge_sort'] = str(memory_bound_3)
+
+        if 'max_bytes_in_set' not in data:
+            data['max_bytes_in_set'] = str(memory_bound_3)
+
+        if 'max_bytes_in_join' not in data:
+            data['max_bytes_in_join'] = str(memory_bound_3)
+
+        if 'log_queries' not in data:
+            data['log_queries'] = '1'
+
+        if 'join_use_nulls' not in data:
+            data['join_use_nulls'] = '1'
+
+        if 'join_algorithm' not in data:
+            data['join_algorithm'] = 'auto'
+
+        if 'input_format_allow_errors_num' not in data:
+            data['input_format_allow_errors_num'] = '100'
+
+        if 'input_format_allow_errors_ratio' not in data:
+            data['input_format_allow_errors_ratio'] = '0.01'
+
+        if 'date_time_input_format' not in data:
+            data['date_time_input_format'] = 'best_effort'
+
     if 'profiles' in data:
         assert isinstance(data['profiles'], dict)
     else:
         data['profiles'] = {}
 
-    if 'default' in data['profiles']:
-        assert isinstance(data['profiles']['default'], dict)
+    if user in data['profiles']:
+        assert isinstance(data['profiles'][user], dict)
     else:
-        data['profiles']['default'] = {}
+        data['profiles'][user] = {}
 
-    profile = data['profiles']['default']
-
-    if 'max_memory_usage_for_all_queries' not in profile:
-        profile['max_memory_usage_for_all_queries'] = str(memory_bound_1)
-
-    if 'max_memory_usage' not in profile:
-        profile['max_memory_usage'] = str(memory_bound_1)
-
-    if 'max_bytes_before_external_group_by' not in profile:
-        profile['max_bytes_before_external_group_by'] = str(memory_bound_2)
-
-    if 'max_bytes_before_external_sort' not in profile:
-        profile['max_bytes_before_external_sort'] = str(memory_bound_2)
-
-    if 'max_bytes_in_distinct' not in profile:
-        profile['max_bytes_in_distinct'] = str(memory_bound_2)
-
-    if 'max_bytes_before_remerge_sort' not in profile:
-        profile['max_bytes_before_remerge_sort'] = str(memory_bound_3)
-
-    if 'max_bytes_in_set' not in profile:
-        profile['max_bytes_in_set'] = str(memory_bound_3)
-
-    if 'max_bytes_in_join' not in profile:
-        profile['max_bytes_in_join'] = str(memory_bound_3)
-
-    if 'log_queries' not in profile:
-        profile['log_queries'] = '1'
-
-    if 'join_use_nulls' not in profile:
-        profile['join_use_nulls'] = '1'
-
-    if 'join_algorithm' not in profile:
-        profile['join_algorithm'] = 'auto'
-
-    if 'input_format_allow_errors_num' not in profile:
-        profile['input_format_allow_errors_num'] = '100'
-
-    if 'input_format_allow_errors_ratio' not in profile:
-        profile['input_format_allow_errors_ratio'] = '0.01'
-
-    if 'date_time_input_format' not in profile:
-        profile['date_time_input_format'] = 'best_effort'
+    setup_profile(data['profiles'][user])
 
     # add default user
+
+    def setup_user(
+            data: typing.Dict[str, typing.Any]
+    ) -> None:
+        if 'profile' not in data:
+            data['profile'] = user
+
+        if 'quota' not in data:
+            data['quota'] = user
+
+        if 'password' not in data:
+            data['password'] = password
+
+        if 'networks' not in data:
+            data['networks'] = {
+                'ip': '::/0',
+            }
 
     if 'users' in data:
         assert isinstance(data['users'], dict)
     else:
         data['users'] = {}
 
-    if 'default' in data['users']:
-        assert isinstance(data['users']['default'], dict)
+    if user in data['users']:
+        assert isinstance(data['users'][user], dict)
     else:
-        data['users']['default'] = {}
+        data['users'][user] = {}
 
-    user = data['users']['default']
-
-    if 'profile' not in user:
-        user['profile'] = 'default'
-
-    if 'quota' not in user:
-        user['quota'] = 'default'
-
-    if 'password' not in user:
-        user['password'] = ''
-
-    if 'networks' not in user:
-        user['networks'] = {
-            'ip': '::/0',
-        }
+    setup_user(data['users'][user])
 
     # add default quota
 
@@ -154,10 +162,10 @@ def create_config(
     else:
         data['quotas'] = {}
 
-    if 'default' in data['quotas']:
-        assert isinstance(data['quotas']['default'], dict)
+    if user in data['quotas']:
+        assert isinstance(data['quotas'][user], dict)
     else:
-        data['quotas']['default'] = {}
+        data['quotas'][user] = {}
 
     # generate xml
 
