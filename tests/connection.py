@@ -32,6 +32,7 @@ def test_connection_http() -> None:
         'localhost',
         8123,
         '/',
+        {},
         iteration.given_in([b'select 1']),
         iteration.collect_out(stdout_list),
         iteration.empty_out()
@@ -85,6 +86,7 @@ def test_connection_http_benchmark(
             'localhost',
             8123,
             '/',
+            {},
             iteration.given_in([b'select number from numbers(1000000)']),
             iteration.ignore_out(),
             iteration.empty_out()

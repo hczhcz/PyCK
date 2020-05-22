@@ -13,14 +13,17 @@ from ck.session import passive
 class LocalSession(passive.PassiveSession):
     def __init__(
             self,
+            host: str = 'localhost',
             tcp_port: int = 9000,
             http_port: int = 8123,
+            user: str = 'default',
+            password: str = '',
+            default_settings: typing.Optional[typing.Dict[str, str]] = None,
             ssh_port: int = 22,
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
-            default_settings: typing.Optional[typing.Dict[str, str]] = None,
             data_dir: typing.Optional[str] = None,
             config: typing.Optional[typing.Dict[str, typing.Any]] = None,
             auto_start: bool = True,
@@ -28,15 +31,17 @@ class LocalSession(passive.PassiveSession):
             start: bool = False
     ) -> None:
         super().__init__(
-            'localhost',
+            host,
             tcp_port,
             http_port,
+            user,
+            password,
+            default_settings,
             ssh_port,
             ssh_username,
             ssh_password,
             ssh_public_key,
-            ssh_command_prefix,
-            default_settings
+            ssh_command_prefix
         )
 
         if data_dir is None:
@@ -104,6 +109,8 @@ class LocalSession(passive.PassiveSession):
         clickhouse.create_config(
             self._tcp_port,
             self._http_port,
+            self._user,
+            self._password,
             str(self._path),
             self._config
         )

@@ -19,21 +19,27 @@ class PassiveSession:
             host: str = 'localhost',
             tcp_port: int = 9000,
             http_port: int = 8123,
+            user: str = 'default',
+            password: str = '',
+            default_settings: typing.Optional[typing.Dict[str, str]] = None,
             ssh_port: int = 22,
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
-            ssh_command_prefix: typing.Optional[typing.List[str]] = None,
-            default_settings: typing.Optional[typing.Dict[str, str]] = None
+            ssh_command_prefix: typing.Optional[typing.List[str]] = None
     ) -> None:
         self._host = host
         self._tcp_port = tcp_port
         self._http_port = http_port
+
+        self._user = user
+        self._password = password
+        self._default_settings = default_settings
+
         self._ssh_port = ssh_port
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
         self._ssh_public_key = ssh_public_key
-        self._default_settings = default_settings
 
         if ssh_command_prefix is None:
             self._ssh_command_prefix: typing.List[str] = []
@@ -122,6 +128,8 @@ class PassiveSession:
                     'client',
                     f'--host={self._host}',
                     f'--port={self._tcp_port}',
+                    f'--user={self._user}',
+                    f'--password={self._password}',
                     *(
                         f'--{key}={value}'
                         for key, value in full_settings.items()
@@ -137,6 +145,10 @@ class PassiveSession:
                 self._host,
                 self._http_port,
                 f'/?{urllib.parse.urlencode(full_settings)}',
+                {
+                    'X-ClickHouse-User': self._user,
+                    'X-ClickHouse-Key': self._password,
+                },
                 gen_stdin,
                 gen_stdout,
                 gen_stderr
@@ -154,6 +166,8 @@ class PassiveSession:
                     self._ssh_binary_file,
                     'client',
                     f'--port={self._tcp_port}',
+                    f'--user={self._user}',
+                    f'--password={self._password}',
                     *(
                         f'--{key}={value}'
                         for key, value in full_settings.items()
