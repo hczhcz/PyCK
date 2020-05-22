@@ -24,6 +24,7 @@ class PassiveSession:
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
+            default_settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self._host = host
         self._tcp_port = tcp_port
@@ -32,6 +33,7 @@ class PassiveSession:
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
         self._ssh_public_key = ssh_public_key
+        self._default_settings = default_settings
 
         if ssh_command_prefix is None:
             self._ssh_command_prefix: typing.List[str] = []
@@ -106,7 +108,10 @@ class PassiveSession:
         gen_stderr = iteration.collect_out(stderr_list)
 
         if settings is None:
-            full_settings: typing.Dict[str, str] = {}
+            if self._default_settings is None:
+                full_settings: typing.Dict[str, str] = {}
+            else:
+                full_settings = self._default_settings
         else:
             full_settings = settings
 

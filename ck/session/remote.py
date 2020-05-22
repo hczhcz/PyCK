@@ -19,6 +19,7 @@ class RemoteSession(passive.PassiveSession):
             ssh_password: typing.Optional[str] = None,
             ssh_public_key: typing.Optional[str] = None,
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
+            default_settings: typing.Optional[typing.Dict[str, str]] = None,
             data_dir: typing.Optional[str] = None,
             config: typing.Optional[typing.Dict[str, typing.Any]] = None,
             auto_start: bool = True,
@@ -33,7 +34,8 @@ class RemoteSession(passive.PassiveSession):
             ssh_username,
             ssh_password,
             ssh_public_key,
-            ssh_command_prefix
+            ssh_command_prefix,
+            default_settings
         )
 
         self._require_ssh()
