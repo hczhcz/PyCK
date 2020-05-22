@@ -31,20 +31,14 @@ class PassiveSession:
         self._host = host
         self._tcp_port = tcp_port
         self._http_port = http_port
-
         self._user = user
         self._password = password
-        self._default_settings = default_settings
-
+        self._default_settings = default_settings or {}
         self._ssh_port = ssh_port
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
         self._ssh_public_key = ssh_public_key
-
-        if ssh_command_prefix is None:
-            self._ssh_command_prefix: typing.List[str] = []
-        else:
-            self._ssh_command_prefix = ssh_command_prefix
+        self._ssh_command_prefix = ssh_command_prefix or []
 
         self._ssh_client = None
         self._ssh_default_data_dir: typing.Optional[str] = None
@@ -113,13 +107,10 @@ class PassiveSession:
         gen_stdout = gen_out
         gen_stderr = iteration.collect_out(stderr_list)
 
-        if settings is None:
-            if self._default_settings is None:
-                full_settings: typing.Dict[str, str] = {}
-            else:
-                full_settings = self._default_settings
-        else:
-            full_settings = settings
+        full_settings = {
+            **self._default_settings,
+            **(settings or {}),
+        }
 
         if method == 'tcp':
             raw_join = connection.run_process(

@@ -51,11 +51,7 @@ class RemoteSession(passive.PassiveSession):
         else:
             self._path = pathlib.Path(data_dir)
 
-        if config is None:
-            self._config: typing.Dict[str, typing.Any] = {}
-        else:
-            self._config = config
-
+        self._config = config or {}
         self._auto_start = auto_start
 
         if stop:

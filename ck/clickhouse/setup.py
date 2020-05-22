@@ -28,144 +28,89 @@ def create_config(
     memory_bound_2 = int(0.5 * memory_size)
     memory_bound_3 = int(0.1 * memory_size)
 
-    data = config.copy()
-
     # add server settings
 
-    data['tcp_port'] = str(tcp_port)
-    data['http_port'] = str(http_port)
-
-    if 'listen_host' not in data:
-        data['listen_host'] = '0.0.0.0'
-
-    if 'path' not in data:
-        data['path'] = str(path)
-
-    if 'tmp_path' not in data:
-        data['tmp_path'] = str(tmp_path)
-
-    if 'format_schema_path' not in data:
-        data['format_schema_path'] = str(format_schema_path)
-
-    if 'user_files_path' not in data:
-        data['user_files_path'] = str(user_files_path)
-
-    if 'mark_cache_size' not in data:
-        data['mark_cache_size'] = '5368709120'
-
-    if 'logger' not in data:
-        data['logger'] = {
+    data = {
+        'listen_host': '0.0.0.0',
+        'path': str(path),
+        'tmp_path': str(tmp_path),
+        'format_schema_path': str(format_schema_path),
+        'user_files_path': str(user_files_path),
+        'mark_cache_size': '5368709120',
+        'logger': {
             'log': str(log_path),
             'errorlog': str(errorlog_path),
-        }
-
-    if 'query_log' not in data:
-        data['query_log'] = {
+        },
+        'query_log': {
             'database': 'system',
             'table': 'query_log',
-        }
+        },
+        'profiles': {},
+        'users': {},
+        'quotas': {},
+        **config.copy(),
+        'tcp_port': str(tcp_port),
+        'http_port': str(http_port),
+    }
 
-    # add default profile
+    # add profile
 
-    def setup_profile(
-            data: typing.Dict[str, typing.Any]
-    ) -> None:
-        if 'max_memory_usage_for_all_queries' not in data:
-            data['max_memory_usage_for_all_queries'] = str(memory_bound_1)
+    assert isinstance(data['profiles'], dict)
 
-        if 'max_memory_usage' not in data:
-            data['max_memory_usage'] = str(memory_bound_1)
+    data['profiles'] = {
+        user: {},
+        **data['profiles'],
+    }
 
-        if 'max_bytes_before_external_group_by' not in data:
-            data['max_bytes_before_external_group_by'] = str(memory_bound_2)
+    assert isinstance(data['profiles'][user], dict)
 
-        if 'max_bytes_before_external_sort' not in data:
-            data['max_bytes_before_external_sort'] = str(memory_bound_2)
+    data['profiles'][user] = {
+        'max_memory_usage_for_all_queries': str(memory_bound_1),
+        'max_memory_usage': str(memory_bound_1),
+        'max_bytes_before_external_group_by': str(memory_bound_2),
+        'max_bytes_before_external_sort': str(memory_bound_2),
+        'max_bytes_in_distinct': str(memory_bound_2),
+        'max_bytes_before_remerge_sort': str(memory_bound_3),
+        'max_bytes_in_set': str(memory_bound_3),
+        'max_bytes_in_join': str(memory_bound_3),
+        'log_queries': '1',
+        'join_use_nulls': '1',
+        'join_algorithm': 'auto',
+        'input_format_allow_errors_num': '100',
+        'input_format_allow_errors_ratio': '0.01',
+        'date_time_input_format': 'best_effort',
+        **data['profiles'][user],
+    }
 
-        if 'max_bytes_in_distinct' not in data:
-            data['max_bytes_in_distinct'] = str(memory_bound_2)
+    # add user
 
-        if 'max_bytes_before_remerge_sort' not in data:
-            data['max_bytes_before_remerge_sort'] = str(memory_bound_3)
+    assert isinstance(data['users'], dict)
 
-        if 'max_bytes_in_set' not in data:
-            data['max_bytes_in_set'] = str(memory_bound_3)
+    data['users'] = {
+        user: {},
+        **data['users'],
+    }
 
-        if 'max_bytes_in_join' not in data:
-            data['max_bytes_in_join'] = str(memory_bound_3)
+    assert isinstance(data['users'][user], dict)
 
-        if 'log_queries' not in data:
-            data['log_queries'] = '1'
+    data['users'][user] = {
+        'profile': user,
+        'quota': user,
+        'password': password,
+        'networks': {
+            'ip': '::/0',
+        },
+        **data['users'][user],
+    }
 
-        if 'join_use_nulls' not in data:
-            data['join_use_nulls'] = '1'
+    # add quota
 
-        if 'join_algorithm' not in data:
-            data['join_algorithm'] = 'auto'
+    assert isinstance(data['quotas'], dict)
 
-        if 'input_format_allow_errors_num' not in data:
-            data['input_format_allow_errors_num'] = '100'
-
-        if 'input_format_allow_errors_ratio' not in data:
-            data['input_format_allow_errors_ratio'] = '0.01'
-
-        if 'date_time_input_format' not in data:
-            data['date_time_input_format'] = 'best_effort'
-
-    if 'profiles' in data:
-        assert isinstance(data['profiles'], dict)
-    else:
-        data['profiles'] = {}
-
-    if user in data['profiles']:
-        assert isinstance(data['profiles'][user], dict)
-    else:
-        data['profiles'][user] = {}
-
-    setup_profile(data['profiles'][user])
-
-    # add default user
-
-    def setup_user(
-            data: typing.Dict[str, typing.Any]
-    ) -> None:
-        if 'profile' not in data:
-            data['profile'] = user
-
-        if 'quota' not in data:
-            data['quota'] = user
-
-        if 'password' not in data:
-            data['password'] = password
-
-        if 'networks' not in data:
-            data['networks'] = {
-                'ip': '::/0',
-            }
-
-    if 'users' in data:
-        assert isinstance(data['users'], dict)
-    else:
-        data['users'] = {}
-
-    if user in data['users']:
-        assert isinstance(data['users'][user], dict)
-    else:
-        data['users'][user] = {}
-
-    setup_user(data['users'][user])
-
-    # add default quota
-
-    if 'quotas' in data:
-        assert isinstance(data['quotas'], dict)
-    else:
-        data['quotas'] = {}
-
-    if user in data['quotas']:
-        assert isinstance(data['quotas'][user], dict)
-    else:
-        data['quotas'][user] = {}
+    data['quotas'] = {
+        user: {},
+        **data['quotas'],
+    }
 
     # generate xml
 
