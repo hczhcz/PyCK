@@ -10,7 +10,7 @@ from ck import iteration
 
 
 def test_connection_process() -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     stdout_list: typing.List[bytes] = []
     status = connection.run_process(
@@ -25,7 +25,7 @@ def test_connection_process() -> None:
 
 
 def test_connection_http() -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     stdout_list: typing.List[bytes] = []
     status = connection.run_http(
@@ -43,7 +43,7 @@ def test_connection_http() -> None:
 
 
 def test_connection_ssh() -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     ssh_client = connection.connect_ssh('localhost', 22)
 
@@ -63,7 +63,7 @@ def test_connection_ssh() -> None:
 def test_connection_process_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     def run() -> None:
         connection.run_process(
@@ -79,7 +79,7 @@ def test_connection_process_benchmark(
 def test_connection_http_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     def run() -> None:
         connection.run_http(
@@ -98,7 +98,7 @@ def test_connection_http_benchmark(
 def test_connection_ssh_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    ck.LocalSession(start=True)
+    ck.LocalSession(stop=True, start=True)
 
     ssh_client = connection.connect_ssh('localhost', 22)
 

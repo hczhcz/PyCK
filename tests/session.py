@@ -16,10 +16,14 @@ METHODS: typing.List[
 
 
 def test_session_passive() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(
+        tcp_port=9001,
+        http_port=8124,
+        user='test1',
+        password='test2',
+        stop=True
+    )
     passive_session = ck.PassiveSession()
-
-    local_session.stop()
 
     for method in METHODS:
         assert not passive_session.ping(method=method)
@@ -38,7 +42,13 @@ def test_session_passive() -> None:
 
 
 def test_session_local() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(
+        tcp_port=9001,
+        http_port=8124,
+        user='test1',
+        password='test2',
+        stop=True
+    )
 
     pid_1 = local_session.stop()
     assert pid_1 is not None
@@ -65,7 +75,13 @@ def test_session_local() -> None:
 
 
 def test_session_remote() -> None:
-    remote_session = ck.RemoteSession()
+    remote_session = ck.RemoteSession(
+        tcp_port=9001,
+        http_port=8124,
+        user='test1',
+        password='test2',
+        stop=True
+    )
 
     pid_1 = remote_session.stop()
     assert pid_1 is not None
@@ -92,7 +108,8 @@ def test_session_remote() -> None:
 
 
 def test_session_settings() -> None:
-    local_session = ck.LocalSession(start=True)
+    # TODO: default_settings?
+    local_session = ck.LocalSession(stop=True)
 
     query_text = 'select isNull(y) ' \
         'from (select 1 as x) as lhs ' \
@@ -113,7 +130,7 @@ def test_session_settings() -> None:
 
 
 def test_session_gen_bytes() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x String) engine = Memory')
@@ -130,7 +147,7 @@ def test_session_gen_bytes() -> None:
 
 
 def test_session_gen_stream() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x Int64) engine = Memory')
@@ -160,7 +177,7 @@ def test_session_gen_stream() -> None:
 
 
 def test_session_gen_file() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x String) engine = Memory')
@@ -181,7 +198,7 @@ def test_session_gen_file() -> None:
 
 
 def test_session_gen_pandas() -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     local_session.query('drop table if exists pyck_test')
     local_session.query('create table pyck_test (x Int64) engine = Memory')
@@ -202,7 +219,7 @@ def test_session_gen_pandas() -> None:
 def test_session_method_tcp_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     def run() -> None:
         local_session.query(
@@ -216,7 +233,7 @@ def test_session_method_tcp_benchmark(
 def test_session_method_http_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     def run() -> None:
         local_session.query(
@@ -230,7 +247,7 @@ def test_session_method_http_benchmark(
 def test_session_method_ssh_benchmark(
         benchmark: pytest_benchmark.fixture.BenchmarkFixture
 ) -> None:
-    local_session = ck.LocalSession(start=True)
+    local_session = ck.LocalSession(stop=True)
 
     def run() -> None:
         local_session.query(
