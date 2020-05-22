@@ -88,7 +88,7 @@ class PassiveSession:
 
     def _run(
             self,
-            query_text: str,
+            query: str,
             gen_in: typing.Generator[bytes, None, None],
             gen_out: typing.Generator[None, bytes, None],
             method: typing_extensions.Literal['tcp', 'http', 'ssh'],
@@ -101,7 +101,7 @@ class PassiveSession:
         stderr_list: typing.List[bytes] = []
 
         gen_stdin = iteration.concat_in(
-            iteration.given_in([f'{query_text}\n'.encode()]),
+            iteration.given_in([f'{query}\n'.encode()]),
             gen_in
         )
         gen_stdout = gen_out
@@ -171,7 +171,7 @@ class PassiveSession:
             if raw_join() != good_status:
                 raise exception.QueryError(
                     self._host,
-                    query_text,
+                    query,
                     b''.join(stderr_list).decode()
                 )
 
@@ -179,7 +179,7 @@ class PassiveSession:
 
     def query_async(
             self,
-            query_text: str,
+            query: str,
             data: bytes = b'',
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
@@ -189,7 +189,7 @@ class PassiveSession:
         gen_in = iteration.given_in([data])
         gen_out = iteration.collect_out(stdout_list)
 
-        raw_join = self._run(query_text, gen_in, gen_out, method, settings)
+        raw_join = self._run(query, gen_in, gen_out, method, settings)
 
         def join() -> bytes:
             raw_join()
@@ -200,16 +200,16 @@ class PassiveSession:
 
     def query(
             self,
-            query_text: str,
+            query: str,
             data: bytes = b'',
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> bytes:
-        return self.query_async(query_text, data, method, settings)()
+        return self.query_async(query, data, method, settings)()
 
     def query_stream_async(
             self,
-            query_text: str,
+            query: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
             stream_out: typing.Optional[typing.BinaryIO] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
@@ -225,18 +225,18 @@ class PassiveSession:
         else:
             gen_out = iteration.stream_out(stream_out)
 
-        return self._run(query_text, gen_in, gen_out, method, settings)
+        return self._run(query, gen_in, gen_out, method, settings)
 
     def query_stream(
             self,
-            query_text: str,
+            query: str,
             stream_in: typing.Optional[typing.BinaryIO] = None,
             stream_out: typing.Optional[typing.BinaryIO] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_stream_async(
-            query_text,
+            query,
             stream_in,
             stream_out,
             method,
@@ -245,30 +245,30 @@ class PassiveSession:
 
     def query_pipe_async(
             self,
-            query_text: str,
+            query: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> typing.Callable[[], None]:
         gen_in = iteration.pipe_in()
         gen_out = iteration.pipe_out()
 
-        return self._run(query_text, gen_in, gen_out, method, settings)
+        return self._run(query, gen_in, gen_out, method, settings)
 
     def query_pipe(
             self,
-            query_text: str,
+            query: str,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_pipe_async(
-            query_text,
+            query,
             method,
             settings
         )()
 
     def query_file_async(
             self,
-            query_text: str,
+            query: str,
             path_in: typing.Optional[str] = None,
             path_out: typing.Optional[str] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
@@ -284,18 +284,18 @@ class PassiveSession:
         else:
             gen_out = iteration.file_out(path_out)
 
-        return self._run(query_text, gen_in, gen_out, method, settings)
+        return self._run(query, gen_in, gen_out, method, settings)
 
     def query_file(
             self,
-            query_text: str,
+            query: str,
             path_in: typing.Optional[str] = None,
             path_out: typing.Optional[str] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None
     ) -> None:
         self.query_file_async(
-            query_text,
+            query,
             path_in,
             path_out,
             method,
@@ -304,7 +304,7 @@ class PassiveSession:
 
     def query_pandas_async(
             self,
-            query_text: str,
+            query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None,
@@ -325,7 +325,7 @@ class PassiveSession:
             gen_out = iteration.empty_out()
 
         raw_join = self._run(
-            f'{query_text} format ArrowStream',
+            f'{query} format ArrowStream',
             gen_in,
             gen_out,
             method,
@@ -378,14 +378,14 @@ class PassiveSession:
 
     def query_pandas(
             self,
-            query_text: str,
+            query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None,
             join_interval: float = 0.1
     ) -> typing.Optional[pandas.DataFrame]:
         return self.query_pandas_async(
-            query_text,
+            query,
             dataframe,
             method,
             settings,
