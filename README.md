@@ -1,6 +1,8 @@
 PyCK
 ===
 
+ClickHouse operation and query kit
+
 Installation
 ---
 
@@ -32,7 +34,7 @@ print(session.query('select 1 as x, 2 as y format Pretty').decode())
 # create a table
 session.query('create table test (x Int32) engine=Memory')
 
-# save data from a file to a table
+# load data from a file to a table
 session.query_file(
     'insert into test format CSV',
     path_in='1.csv'
@@ -40,4 +42,8 @@ session.query_file(
 
 # load data from a table to a dataframe
 print(session.query_pandas('select * from test'))
+
+# make an async query
+join = session.query_async('select 1')
+print(join())
 ```
