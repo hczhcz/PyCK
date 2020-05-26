@@ -1,4 +1,6 @@
 import dis
+import functools
+import inspect
 import typing
 
 from ck import exception
@@ -8,17 +10,27 @@ from ck.query import ast
 def sql_template(
         function: typing.Callable[..., typing.Any]
 ) -> typing.Callable[..., str]:
+    signature = inspect.signature(function)
+
     bytecode = dis.Bytecode(function)
+    codeobj = bytecode.codeobj
     instructions = list(bytecode)
 
+    @functools.wraps(function)
     def build(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        bound_arguments = signature.bind(*args, **kwargs)
+        bound_arguments.apply_defaults()
+
         stack: typing.List[ast.BaseAST] = []
         context = {
             'with_': ast.InitialStatement('with'),
             'select': ast.InitialStatement('select'),
             'select_distinct': ast.InitialStatement('select_distinct'),
             'insert_into': ast.InitialStatement('insert_into'),
-            # TODO
+            **{
+                name: ast.ValueExpression(value)
+                for name, value in bound_arguments.arguments.items()
+            },
         }
 
         # notice: see dis.opmap
