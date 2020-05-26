@@ -8,3 +8,7 @@ class ShellError(RuntimeError):
 
 class ServiceError(RuntimeError):
     pass
+
+
+class DisError(SyntaxError):
+    pass
