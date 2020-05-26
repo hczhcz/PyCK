@@ -69,8 +69,8 @@ class ValueExpression(BaseExpression):
         self._value = value
 
     def render_expression(self) -> str:
-        if type(self._value) is str:
-            return sql_escape(self._name, '\'')
+        if isinstance(self._value, str):
+            return sql_escape(self._value, '\'')
 
         # TODO: other types?
         return str(self._value)
@@ -89,7 +89,7 @@ class CallExpression(BaseExpression):
         self._arguments = arguments
 
     def render_expression(self) -> str:
-        if type(self._function) is IdentifierExpression:
+        if isinstance(self._function, IdentifierExpression):
             function_text = self._function.render_expression()
         else:
             function_text = self._function
@@ -150,7 +150,7 @@ class ListClauseStatement(BaseStatement):
             previous: BaseStatement,
             arguments: typing.List[BaseAST]
     ) -> None:
-        if type(previous) is ListClauseStatement:
+        if isinstance(previous, ListClauseStatement):
             raise TypeError()
 
         self._previous = previous

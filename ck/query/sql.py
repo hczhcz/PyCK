@@ -376,7 +376,7 @@ def sql_template(
                 else:
                     arguments = []
 
-                if type(stack[-1]) is ast.IdentifierExpression:
+                if isinstance(stack[-1], ast.IdentifierExpression):
                     stack[-1] = ast.CallExpression(stack[-1], arguments)
                 elif isinstance(stack[-1], ast.BaseStatement):
                     stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
@@ -386,10 +386,10 @@ def sql_template(
             elif opname == 'CALL_FUNCTION_KW':
                 names = stack[-1]
                 arguments = stack[-argval - 1:-len(names) - 1]
-                kw_arguments = zip(names, stack[-len(names) - 1:-1])
+                kw_arguments = dict(zip(names, stack[-len(names) - 1:-1]))
                 del stack[-argval - 1:]
 
-                if type(stack[-1]) is ast.IdentifierExpression:
+                if isinstance(stack[-1], ast.IdentifierExpression):
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
