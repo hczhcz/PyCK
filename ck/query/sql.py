@@ -22,7 +22,7 @@ def sql_template(
         bound_arguments.apply_defaults()
 
         stack: typing.List[ast.BaseAST] = []
-        context = {
+        context: typing.Dict[str, ast.BaseAST] = {
             'with_': ast.InitialStatement('with'),
             'select': ast.InitialStatement('select'),
             'select_distinct': ast.InitialStatement('select_distinct'),
@@ -396,7 +396,11 @@ def sql_template(
                     # TODO
                     pass
             elif opname == 'CALL_FUNCTION_KW':
-                names = stack[-1]
+                # TODO
+                assert isinstance(stack[-1], ast.ValueExpression)
+                assert isinstance(stack[-1]._value, tuple)
+
+                names = stack[-1]._value
                 arguments = stack[-argval - 1:-len(names) - 1]
                 kw_arguments = dict(zip(names, stack[-len(names) - 1:-1]))
                 del stack[-argval - 1:]
