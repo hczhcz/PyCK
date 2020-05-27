@@ -10,10 +10,10 @@ from ck.query import ast
 def sql_template(
         function: typing.Callable[..., typing.Any]
 ) -> typing.Callable[..., str]:
+    closure = inspect.getclosurevars(function)
     signature = inspect.signature(function)
 
     bytecode = dis.Bytecode(function)
-    codeobj = bytecode.codeobj
     instructions = list(bytecode)
 
     @functools.wraps(function)
@@ -27,6 +27,18 @@ def sql_template(
             'select': ast.InitialStatement('select'),
             'select_distinct': ast.InitialStatement('select_distinct'),
             'insert_into': ast.InitialStatement('insert_into'),
+            **{
+                name: ast.ValueExpression(value)
+                for name, value in closure.builtins.items()
+            },
+            **{
+                name: ast.ValueExpression(value)
+                for name, value in closure.globals.items()
+            },
+            **{
+                name: ast.ValueExpression(value)
+                for name, value in closure.nonlocals.items()
+            },
             **{
                 name: ast.ValueExpression(value)
                 for name, value in bound_arguments.arguments.items()
