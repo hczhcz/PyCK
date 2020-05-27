@@ -410,9 +410,9 @@ def sql_template(
             elif opname == 'CALL_FUNCTION_KW':
                 # TODO
                 assert isinstance(stack[-1], ast.ValueExpression)
-                assert isinstance(stack[-1]._value, tuple)
+                assert isinstance(stack[-1].get(), tuple)
 
-                names = stack[-1]._value
+                names = stack[-1].get()
                 arguments = stack[-argval - 1:-len(names) - 1]
                 kw_arguments = dict(zip(names, stack[-len(names) - 1:-1]))
                 del stack[-argval - 1:]

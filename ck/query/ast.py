@@ -68,6 +68,9 @@ class ValueExpression(BaseExpression):
     ) -> None:
         self._value = value
 
+    def get(self) -> typing.Any:
+        return self._value
+
     def render_expression(self) -> str:
         if isinstance(self._value, str):
             return sql_escape(self._value, '\'')
