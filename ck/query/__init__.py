@@ -10,7 +10,9 @@ IdentifierExpression = ast.IdentifierExpression
 InitialStatement = ast.InitialStatement
 ListClauseStatement = ast.ListClauseStatement
 SimpleClauseStatement = ast.SimpleClauseStatement
-sql_escape = ast.sql_escape
+escape_text = ast.escape_text
+escape_buffer = ast.escape_buffer
+escape_value = ast.escape_value
 ValueExpression = ast.ValueExpression
 
 sql_template = sql.sql_template

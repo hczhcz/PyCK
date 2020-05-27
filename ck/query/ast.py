@@ -2,7 +2,7 @@ import abc
 import typing
 
 
-def sql_escape(
+def escape_text(
         text: str,
         quote: str
 ) -> str:
@@ -35,6 +35,119 @@ def sql_escape(
     return f'{quote}{result}{quote}'
 
 
+def escape_buffer(
+        buffer: typing.Union[
+            bytes,
+            bytearray,
+            memoryview
+        ],
+        quote: str
+) -> str:
+    result = ''
+
+    for char in buffer:
+        if char == 0:
+            result += '\\0'
+        elif char == ord('\\'):
+            result += '\\\\'
+        elif char == ord('\a'):
+            result += '\\a'
+        elif char == ord('\b'):
+            result += '\\b'
+        elif char == ord('\f'):
+            result += '\\f'
+        elif char == ord('\n'):
+            result += '\\n'
+        elif char == ord('\r'):
+            result += '\\r'
+        elif char == ord('\t'):
+            result += '\\t'
+        elif char == ord('\v'):
+            result += '\\v'
+        elif char == ord(quote):
+            result += f'\\{quote}'
+        elif char >= 128:
+            result += f'\\x{char:02x}'
+        else:
+            result += chr(char)
+
+    return f'{quote}{result}{quote}'
+
+
+def escape_value(
+        value: typing.Any
+) -> str:
+    if isinstance(value, str):
+        return escape_text(value, '\'')
+
+    if isinstance(value, int):
+        return str(value)
+
+    if isinstance(value, float):
+        return str(value)
+
+    if isinstance(value, complex):
+        return f'tuple({value.real}, {value.imag})'
+
+    if isinstance(value, list):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value
+        )
+
+        return f'array({members_text})'
+
+    if isinstance(value, tuple):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value
+        )
+
+        return f'tuple({members_text})'
+
+    if isinstance(value, range):
+        return f'range({value.start}, {value.stop}, ' \
+            f'{value.step})'
+
+    if isinstance(value, dict):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value.items()
+        )
+
+        return f'array({members_text})'
+
+    if isinstance(value, set):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value
+        )
+
+        return f'array({members_text})'
+
+    if isinstance(value, frozenset):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value
+        )
+
+        return f'array({members_text})'
+
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+
+    if isinstance(value, bytes):
+        return escape_buffer(value, '\'')
+
+    if isinstance(value, bytearray):
+        return escape_buffer(value, '\'')
+
+    if isinstance(value, memoryview):
+        return escape_buffer(value, '\'')
+
+    raise ValueError()
+
+
 class BaseAST(abc.ABC):
     @abc.abstractmethod
     def render_expression(self) -> str:
@@ -58,7 +171,7 @@ class IdentifierExpression(BaseExpression):
         self._name = name
 
     def render_expression(self) -> str:
-        return sql_escape(self._name, '`')
+        return escape_text(self._name, '`')
 
 
 class ValueExpression(BaseExpression):
@@ -72,11 +185,7 @@ class ValueExpression(BaseExpression):
         return self._value
 
     def render_expression(self) -> str:
-        if isinstance(self._value, str):
-            return sql_escape(self._value, '\'')
-
-        # TODO: other types?
-        return str(self._value)
+        return escape_value(self._value)
 
 
 class CallExpression(BaseExpression):
