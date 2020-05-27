@@ -75,14 +75,10 @@ def sql_template(
             elif opname == 'UNARY_INVERT':
                 stack[-1] = ast.CallExpression('bitNot', stack[-1:])
             elif opname == 'GET_ITER':
-                assert isinstance(stack[-1], ast.ValueExpression)
-
-                stack[-1] = ast.ValueExpression(iter(stack[-1]))
+                stack[-1] = ast.ValueExpression(iter(stack[-1].unbox()))
             elif opname == 'GET_YIELD_FROM_ITER':
-                assert isinstance(stack[-1], ast.ValueExpression)
-
-                # notice: not sure
-                stack[-1] = ast.ValueExpression(iter(stack[-1]))
+                # TODO: more accurate semantic
+                stack[-1] = ast.ValueExpression(iter(stack[-1].unbox()))
             elif opname == 'BINARY_POWER':
                 stack[-2:] = ast.CallExpression('pow', stack[-2:]),
             elif opname == 'BINARY_MULTIPLY':
@@ -189,14 +185,18 @@ def sql_template(
             elif opname == 'PRINT_EXPR':
                 raise exception.DisError(instruction)
             elif opname == 'SET_ADD':
-                # TODO
-                raise exception.DisError(instruction)
+                value = stack.pop()
+
+                stack[-argval].unbox().add(value)
             elif opname == 'LIST_APPEND':
-                # TODO
-                raise exception.DisError(instruction)
+                value = stack.pop()
+
+                stack[-argval].unbox().append(value)
             elif opname == 'MAP_ADD':
-                # TODO
-                raise exception.DisError(instruction)
+                name, value = stack[-2:]
+                del stack[-2:]
+
+                stack[-argval].unbox()[name] = value
             elif opname == 'RETURN_VALUE':
                 return stack.pop()
             elif opname == 'YIELD_VALUE':
@@ -206,7 +206,11 @@ def sql_template(
             elif opname == 'SETUP_ANNOTATIONS':
                 raise exception.DisError(instruction)
             elif opname == 'IMPORT_STAR':
-                raise exception.DisError(instruction)
+                context.update({
+                    name: ast.ValueExpression(value)
+                    for name, value in __import__(argval).__dict__.items()
+                    if not name.startswith('_')
+                })
             elif opname == 'POP_BLOCK':
                 raise exception.DisError(instruction)
             elif opname == 'POP_EXCEPT':
@@ -230,13 +234,19 @@ def sql_template(
             elif opname == 'DELETE_NAME':
                 del context[argval]
             elif opname == 'UNPACK_SEQUENCE':
-                stack[-1:] = stack[-1][:argval]
+                stack[-1:] = stack[-1].unbox()[:argval]
             elif opname == 'UNPACK_EX':
-                stack[-1:] = (
-                    *stack[-1][:argval % 256],
-                    stack[-1][argval % 256:-argval // 256],
-                    *stack[-1][-argval // 256:],
-                )
+                if argval // 256:
+                    stack[-1:] = (
+                        *stack[-1].unbox()[:argval % 256],
+                        stack[-1].unbox()[argval % 256:-argval // 256],
+                        *stack[-1].unbox()[-argval // 256:],
+                    )
+                else:
+                    stack[-1:] = (
+                        *stack[-1].unbox()[:argval % 256],
+                        stack[-1].unbox()[argval % 256:],
+                    )
             elif opname == 'STORE_ATTR':
                 # TODO
                 raise exception.DisError(instruction)
@@ -255,73 +265,105 @@ def sql_template(
                 else:
                     stack.append(ast.IdentifierExpression(argval))
             elif opname == 'BUILD_TUPLE':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                stack.append(ast.CallExpression('tuple', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    tuple(
+                        value.unbox()
+                        for value in stack[len(stack) - argval:]
+                    )
+                ),
             elif opname == 'BUILD_LIST':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                stack.append(ast.CallExpression('array', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    [
+                        value.unbox()
+                        for value in stack[len(stack) - argval:]
+                    ]
+                ),
             elif opname == 'BUILD_SET':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    {
+                        value.unbox()
+                        for value in stack[len(stack) - argval:]
+                    }
+                ),
             elif opname == 'BUILD_MAP':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[len(stack) - 2 * argval:] = ast.ValueExpression(
+                    dict(
+                        zip(
+                            stack[len(stack) - 2 * argval::2],
+                            (
+                                value.unbox()
+                                for value in stack[len(stack) - 2 * argval + 1::2]
+                            )
+                        )
+                    )
+                ),
             elif opname == 'BUILD_CONST_KEY_MAP':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[-argval - 1:] = ast.ValueExpression(
+                    dict(
+                        zip(
+                            stack[-1].unbox(),
+                            (
+                                value.unbox()
+                                for value in stack[-argval - 1:-1]
+                            )
+                        )
+                    )
+                ),
             elif opname == 'BUILD_STRING':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                stack.append(ast.CallExpression('concat', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    ''.join(
+                        value.unbox()
+                        for value in stack[len(stack) - argval:]
+                    )
+                ),
             elif opname == 'BUILD_TUPLE_UNPACK':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                # TODO: not implemented in ClickHouse
-                stack.append(ast.CallExpression('tupleConcat', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    tuple(
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox()
+                    )
+                ),
             elif opname == 'BUILD_TUPLE_UNPACK_WITH_CALL':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                # TODO: not implemented in ClickHouse
-                stack.append(ast.CallExpression('tupleConcat', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    tuple(
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox()
+                    )
+                ),
             elif opname == 'BUILD_LIST_UNPACK':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
-                else:
-                    arguments = []
-
-                stack.append(ast.CallExpression('arrayConcat', arguments))
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    [
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox()
+                    ]
+                ),
             elif opname == 'BUILD_SET_UNPACK':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    {
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox()
+                    }
+                ),
             elif opname == 'BUILD_MAP_UNPACK':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    dict(
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox().items()
+                    )
+                ),
             elif opname == 'BUILD_MAP_UNPACK_WITH_CALL':
-                # TODO
-                raise exception.DisError(instruction)
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    dict(
+                        member
+                        for value in stack[len(stack) - argval:]
+                        for member in value.unbox().items()
+                    )
+                ),
             elif opname == 'LOAD_ATTR':
                 if isinstance(stack[-1], ast.BaseStatement):
                     stack[-1] = ast.SimpleClauseStatement(stack[-1], argval)
@@ -335,7 +377,10 @@ def sql_template(
                 if argval == '<':
                     stack[-2:] = ast.CallExpression('less', stack[-2:]),
                 elif argval == '<=':
-                    stack[-2:] = ast.CallExpression('lessOrEquals', stack[-2:]),
+                    stack[-2:] = ast.CallExpression(
+                        'lessOrEquals',
+                        stack[-2:]
+                    ),
                 elif argval == '==':
                     stack[-2:] = ast.CallExpression('equals', stack[-2:]),
                 elif argval == '!=':
@@ -343,7 +388,10 @@ def sql_template(
                 elif argval == '>':
                     stack[-2:] = ast.CallExpression('greater', stack[-2:]),
                 elif argval == '>=':
-                    stack[-2:] = ast.CallExpression('greaterOrEquals', stack[-2:]),
+                    stack[-2:] = ast.CallExpression(
+                        'greaterOrEquals',
+                        stack[-2:]
+                    ),
                 elif argval == 'in':
                     stack[-2:] = ast.CallExpression('in', stack[-2:]),
                 elif argval == 'not in':
@@ -367,9 +415,17 @@ def sql_template(
                 else:
                     raise exception.DisError(instruction)
             elif opname == 'IMPORT_NAME':
-                raise exception.DisError(instruction)
+                stack[-2:] = ast.ValueExpression(
+                    __import__(
+                        argval,
+                        fromlist=stack[-2].unbox(),
+                        level=stack[-1].unbox()
+                    ).__dict__
+                ),
             elif opname == 'IMPORT_FROM':
-                raise exception.DisError(instruction)
+                context[argval] = ast.ValueExpression(
+                    stack[-1].unbox()[argval]
+                )
             elif opname == 'JUMP_FORWARD':
                 # TODO
                 raise exception.DisError(instruction)
@@ -432,105 +488,172 @@ def sql_template(
             elif opname == 'RAISE_VARARGS':
                 raise exception.DisError(instruction)
             elif opname == 'CALL_FUNCTION':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
+                if isinstance(stack[-argval - 1], ast.IdentifierExpression):
+                    stack[-argval - 1:] = ast.CallExpression(
+                        stack[-argval - 1],
+                        stack[len(stack) - argval:]
+                    ),
+                elif isinstance(stack[-argval - 1], ast.CallExpression):
+                    stack[-argval - 1:] = ast.CallExpression(
+                        stack[-argval - 1],
+                        stack[len(stack) - argval:]
+                    ),
+                elif isinstance(stack[-argval - 1], ast.BaseStatement):
+                    stack[-argval - 1:] = ast.ListClauseStatement(
+                        stack[-argval - 1],
+                        stack[len(stack) - argval:]
+                    ),
                 else:
-                    arguments = []
-
-                if isinstance(stack[-1], ast.IdentifierExpression):
-                    stack[-1] = ast.CallExpression(stack[-1], arguments)
-                elif isinstance(stack[-1], ast.BaseStatement):
-                    stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
-                else:
-                    # TODO
-                    pass
+                    stack[-argval - 1] = ast.ValueExpression(
+                        stack[-argval - 1].unbox()(
+                            *(
+                                value.unbox()
+                                for value in stack[len(stack) - argval:]
+                            )
+                        )
+                    )
             elif opname == 'CALL_FUNCTION_KW':
-                # TODO
-                assert isinstance(stack[-1], ast.ValueExpression)
-                assert isinstance(stack[-1].get(), tuple)
+                names = stack[-1].unbox()
 
-                names = stack[-1].get()
-                arguments = stack[-argval - 1:-len(names) - 1]
-                kw_arguments = dict(zip(names, stack[-len(names) - 1:-1]))
-                del stack[-argval - 1:]
-
-                if isinstance(stack[-1], ast.IdentifierExpression):
-                    if kw_arguments:
+                if isinstance(stack[-argval - 2], ast.IdentifierExpression):
+                    if names:
                         raise exception.DisError(instruction)
 
-                    stack[-1] = ast.CallExpression(stack[-1], arguments)
-                elif isinstance(stack[-1], ast.BaseStatement):
-                    if kw_arguments:
+                    stack[-argval - 2:] = ast.CallExpression(
+                        stack[-argval - 2],
+                        stack[-argval - 1:-1]
+                    ),
+                elif isinstance(stack[-argval - 2], ast.CallExpression):
+                    if names:
                         raise exception.DisError(instruction)
 
-                    stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
+                    stack[-argval - 2:] = ast.CallExpression(
+                        stack[-argval - 2],
+                        stack[-argval - 1:-1]
+                    ),
+                elif isinstance(stack[-argval - 2], ast.BaseStatement):
+                    if names:
+                        raise exception.DisError(instruction)
+
+                    stack[-argval - 2:] = ast.ListClauseStatement(
+                        stack[-argval - 2],
+                        stack[-argval - 1:-1]
+                    ),
                 else:
-                    # TODO
-                    pass
+                    stack[-argval - 2:] = ast.ValueExpression(
+                        stack[-argval - 2].unbox()(
+                            *(
+                                value.unbox()
+                                for value in stack[-argval - 1:-len(names) - 1]
+                            ),
+                            **dict(
+                                zip(
+                                    names,
+                                    (
+                                        value.unbox()
+                                        for value in stack[-len(names) - 1:-1]
+                                    )
+                                )
+                            )
+                        )
+                    ),
             elif opname == 'CALL_FUNCTION_EX':
-                if argval:
-                    assert isinstance(stack[-2], ast.ValueExpression)
-                    assert isinstance(stack[-2].get(), tuple)
-                    assert isinstance(stack[-1], ast.ValueExpression)
-                    assert isinstance(stack[-1].get(), dict)
-
-                    arguments = stack[-2].get()
-                    kw_arguments = stack[-1].get()
-                    del stack[-2:]
+                if argval & 1:
+                    kw_arguments = stack[-1].unbox()
+                    stack.pop()
                 else:
-                    assert isinstance(stack[-1], ast.ValueExpression)
-                    assert isinstance(stack[-1].get(), tuple)
-
-                    arguments = stack[-1].get()
                     kw_arguments = {}
-                    del stack[-1]
 
-                if isinstance(stack[-1]):
+                if isinstance(stack[-2], ast.IdentifierExpression):
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
-                    stack[-1] = ast.CallExpression(stack[-1], arguments)
-                elif isinstance(stack[-1], ast.BaseStatement):
+                    stack[-2:] = ast.CallExpression(stack[-2], stack[-1].unbox()),
+                elif isinstance(stack[-2], ast.CallExpression):
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
-                    stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
+                    stack[-2:] = ast.CallExpression(stack[-2], stack[-1].unbox()),
+                elif isinstance(stack[-2], ast.BaseStatement):
+                    if kw_arguments:
+                        raise exception.DisError(instruction)
+
+                    stack[-2:] = ast.ListClauseStatement(stack[-2], stack[-1].unbox()),
                 else:
-                    # TODO
-                    pass
+                    stack[-2:] = ast.ValueExpression(
+                        stack[-2].unbox()(
+                            *(
+                                value.unbox()
+                                for value in stack[-1].unbox()
+                            ),
+                            **(
+                                value.unbox()
+                                for value in kw_arguments
+                            )
+                        )
+                    ),
             elif opname == 'LOAD_METHOD':
                 if isinstance(stack[-1], ast.BaseStatement):
-                    stack[-1] = ast.SimpleClauseStatement(stack[-1], argval)
-                    stack.append(stack[-1])
+                    stack[-1:] = (
+                        ast.SimpleClauseStatement(stack[-1], argval),
+                        ast.ValueExpression(None),
+                    )
                 else:
-                    # TODO
-                    pass
+                    stack[-1:] = ast.ValueExpression(
+                        stack[-1].unbox().__getattribute__(argval).__func__
+                    ), stack[-1]
             elif opname == 'CALL_METHOD':
-                if argval:
-                    arguments = stack[-argval:]
-                    del stack[-argval:]
+                if isinstance(stack[-argval - 2], ast.BaseStatement):
+                    stack[-argval - 2:] = ast.ListClauseStatement(
+                        stack[-argval - 2],
+                        stack[len(stack) - argval:]
+                    ),
                 else:
-                    arguments = []
-                if isinstance(stack[-2], ast.BaseStatement):
-                    # TODO: ?
-                    assert stack[-2] is stack[-1]
-                    stack[-2:] = ast.ListClauseStatement(stack[-2], arguments),
-                else:
-                    # TODO
-                    pass
+                    stack[-argval - 2:] = ast.ValueExpression(
+                        stack[-argval - 2].unbox()(
+                            *(
+                                value.unbox()
+                                for value in stack[-argval - 1:]
+                            )
+                        )
+                    ),
             elif opname == 'MAKE_FUNCTION':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_SLICE':
-                # TODO
-                pass
+                stack[len(stack) - argval:] = ast.ValueExpression(
+                    slice(
+                        *(
+                            value.unbox()
+                            for value in stack[len(stack) - argval:]
+                        )
+                    )
+                ),
             elif opname == 'EXTENDED_ARG':
-                # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'FORMAT_VALUE':
-                # TODO
-                pass
+                if argval & 4:
+                    spec = stack[-1].unbox()
+                    stack.pop()
+                else:
+                    spec = ''
+
+                if argval & 3 == 0:
+                    stack[-1] = ast.ValueExpression(
+                        format(stack[-1].unbox, spec)
+                    )
+                elif argval & 3 == 1:
+                    stack[-1] = ast.ValueExpression(
+                        format(str(stack[-1].unbox), spec)
+                    )
+                elif argval & 3 == 2:
+                    stack[-1] = ast.ValueExpression(
+                        format(repr(stack[-1].unbox), spec)
+                    )
+                elif argval & 3 == 3:
+                    stack[-1] = ast.ValueExpression(
+                        format(ascii(stack[-1].unbox), spec)
+                    )
             elif opname == 'HAVE_ARGUMENT':
                 raise exception.DisError(instruction)
             else:

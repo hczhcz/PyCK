@@ -77,6 +77,9 @@ def escape_buffer(
 def escape_value(
         value: typing.Any
 ) -> str:
+    if value is None:
+        return 'null'
+
     if isinstance(value, str):
         return escape_text(value, '\'')
 
@@ -106,8 +109,7 @@ def escape_value(
         return f'tuple({members_text})'
 
     if isinstance(value, range):
-        return f'range({value.start}, {value.stop}, ' \
-            f'{value.step})'
+        return f'range({value.start}, {value.stop}, {value.step})'
 
     if isinstance(value, dict):
         members_text = ', '.join(
@@ -145,10 +147,13 @@ def escape_value(
     if isinstance(value, memoryview):
         return escape_buffer(value, '\'')
 
-    raise ValueError()
+    raise TypeError()
 
 
 class BaseAST(abc.ABC):
+    def unbox(self) -> typing.Any:
+        return self
+
     @abc.abstractmethod
     def render_expression(self) -> str:
         pass
@@ -163,6 +168,20 @@ class BaseExpression(BaseAST):
         return f'select {self.render_expression()}'
 
 
+class ValueExpression(BaseExpression):
+    def __init__(
+            self,
+            value: typing.Any
+    ) -> None:
+        self._value = value
+
+    def unbox(self) -> typing.Any:
+        return self._value
+
+    def render_expression(self) -> str:
+        return escape_value(self._value)
+
+
 class IdentifierExpression(BaseExpression):
     def __init__(
             self,
@@ -174,25 +193,11 @@ class IdentifierExpression(BaseExpression):
         return escape_text(self._name, '`')
 
 
-class ValueExpression(BaseExpression):
-    def __init__(
-            self,
-            value: typing.Any
-    ) -> None:
-        self._value = value
-
-    def get(self) -> typing.Any:
-        return self._value
-
-    def render_expression(self) -> str:
-        return escape_value(self._value)
-
-
 class CallExpression(BaseExpression):
     def __init__(
             self,
             function: typing.Union[
-                IdentifierExpression,
+                BaseAST,
                 str
             ],
             arguments: typing.List[BaseAST]
@@ -201,7 +206,7 @@ class CallExpression(BaseExpression):
         self._arguments = arguments
 
     def render_expression(self) -> str:
-        if isinstance(self._function, IdentifierExpression):
+        if isinstance(self._function, BaseAST):
             function_text = self._function.render_expression()
         else:
             function_text = self._function
