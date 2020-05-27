@@ -75,16 +75,20 @@ def sql_template(
             elif opname == 'UNARY_INVERT':
                 stack[-1] = ast.CallExpression('bitNot', stack[-1:])
             elif opname == 'GET_ITER':
-                raise exception.DisError(instruction)
+                assert isinstance(stack[-1], ast.ValueExpression)
+
+                stack[-1] = ast.ValueExpression(iter(stack[-1]))
             elif opname == 'GET_YIELD_FROM_ITER':
-                raise exception.DisError(instruction)
+                assert isinstance(stack[-1], ast.ValueExpression)
+
+                # notice: not sure
+                stack[-1] = ast.ValueExpression(iter(stack[-1]))
             elif opname == 'BINARY_POWER':
                 stack[-2:] = ast.CallExpression('pow', stack[-2:]),
             elif opname == 'BINARY_MULTIPLY':
                 stack[-2:] = ast.CallExpression('multiply', stack[-2:]),
             elif opname == 'BINARY_MATRIX_MULTIPLY':
-                # TODO
-                pass
+                stack[-2:] = ast.CallExpression('cast', stack[-2:]),
             elif opname == 'BINARY_FLOOR_DIVIDE':
                 stack[-2:] = ast.CallExpression('intDiv', stack[-2:]),
             elif opname == 'BINARY_TRUE_DIVIDE':
@@ -108,22 +112,21 @@ def sql_template(
             elif opname == 'BINARY_OR':
                 stack[-2:] = ast.CallExpression('bitOr', stack[-2:]),
             elif opname == 'INPLACE_POWER':
-                stack[-2:] = ast.CallExpression('multiply', stack[-2:]),
+                stack[-2:] = ast.CallExpression('pow', stack[-2:]),
             elif opname == 'INPLACE_MULTIPLY':
-                stack[-2:] = ast.CallExpression('intDiv', stack[-2:]),
+                stack[-2:] = ast.CallExpression('multiply', stack[-2:]),
             elif opname == 'INPLACE_MATRIX_MULTIPLY':
-                # TODO
-                pass
+                stack[-2:] = ast.CallExpression('cast', stack[-2:]),
             elif opname == 'INPLACE_FLOOR_DIVIDE':
-                stack[-2:] = ast.CallExpression('divide', stack[-2:]),
+                stack[-2:] = ast.CallExpression('intDiv', stack[-2:]),
             elif opname == 'INPLACE_TRUE_DIVIDE':
-                stack[-2:] = ast.CallExpression('modulo', stack[-2:]),
+                stack[-2:] = ast.CallExpression('divide', stack[-2:]),
             elif opname == 'INPLACE_MODULO':
-                stack[-2:] = ast.CallExpression('plus', stack[-2:]),
+                stack[-2:] = ast.CallExpression('modulo', stack[-2:]),
             elif opname == 'INPLACE_ADD':
-                stack[-2:] = ast.CallExpression('minus', stack[-2:]),
+                stack[-2:] = ast.CallExpression('plus', stack[-2:]),
             elif opname == 'INPLACE_SUBTRACT':
-                stack[-2:] = ast.CallExpression('arrayElement', stack[-2:]),
+                stack[-2:] = ast.CallExpression('minus', stack[-2:]),
             elif opname == 'INPLACE_LSHIFT':
                 stack[-2:] = ast.CallExpression('bitShiftLeft', stack[-2:]),
             elif opname == 'INPLACE_RSHIFT':
@@ -187,13 +190,13 @@ def sql_template(
                 raise exception.DisError(instruction)
             elif opname == 'SET_ADD':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'LIST_APPEND':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'MAP_ADD':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'RETURN_VALUE':
                 return stack.pop()
             elif opname == 'YIELD_VALUE':
@@ -227,17 +230,19 @@ def sql_template(
             elif opname == 'DELETE_NAME':
                 del context[argval]
             elif opname == 'UNPACK_SEQUENCE':
-                # TODO
-                pass
+                stack[-1:] = stack[-1][:argval]
             elif opname == 'UNPACK_EX':
-                # TODO
-                pass
+                stack[-1:] = (
+                    *stack[-1][:argval % 256],
+                    stack[-1][argval % 256:-argval // 256],
+                    *stack[-1][-argval // 256:],
+                )
             elif opname == 'STORE_ATTR':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'DELETE_ATTR':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'STORE_GLOBAL':
                 context[argval] = stack.pop()
             elif opname == 'DELETE_GLOBAL':
@@ -267,13 +272,13 @@ def sql_template(
                 stack.append(ast.CallExpression('array', arguments))
             elif opname == 'BUILD_SET':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_MAP':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_CONST_KEY_MAP':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_STRING':
                 if argval:
                     arguments = stack[-argval:]
@@ -283,23 +288,40 @@ def sql_template(
 
                 stack.append(ast.CallExpression('concat', arguments))
             elif opname == 'BUILD_TUPLE_UNPACK':
-                # TODO
-                pass
+                if argval:
+                    arguments = stack[-argval:]
+                    del stack[-argval:]
+                else:
+                    arguments = []
+
+                # TODO: not implemented in ClickHouse
+                stack.append(ast.CallExpression('tupleConcat', arguments))
             elif opname == 'BUILD_TUPLE_UNPACK_WITH_CALL':
-                # TODO
-                pass
+                if argval:
+                    arguments = stack[-argval:]
+                    del stack[-argval:]
+                else:
+                    arguments = []
+
+                # TODO: not implemented in ClickHouse
+                stack.append(ast.CallExpression('tupleConcat', arguments))
             elif opname == 'BUILD_LIST_UNPACK':
-                # TODO
-                pass
+                if argval:
+                    arguments = stack[-argval:]
+                    del stack[-argval:]
+                else:
+                    arguments = []
+
+                stack.append(ast.CallExpression('arrayConcat', arguments))
             elif opname == 'BUILD_SET_UNPACK':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_MAP_UNPACK':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'BUILD_MAP_UNPACK_WITH_CALL':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'LOAD_ATTR':
                 if isinstance(stack[-1], ast.BaseStatement):
                     stack[-1] = ast.SimpleClauseStatement(stack[-1], argval)
@@ -349,20 +371,26 @@ def sql_template(
             elif opname == 'IMPORT_FROM':
                 raise exception.DisError(instruction)
             elif opname == 'JUMP_FORWARD':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'POP_JUMP_IF_TRUE':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'POP_JUMP_IF_FALSE':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'JUMP_IF_TRUE_OR_POP':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'JUMP_IF_FALSE_OR_POP':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'JUMP_ABSOLUTE':
+                # TODO
                 raise exception.DisError(instruction)
             elif opname == 'FOR_ITER':
                 # TODO
-                pass
+                raise exception.DisError(instruction)
             elif opname == 'LOAD_GLOBAL':
                 if argval in context:
                     stack.append(context[argval])
@@ -382,15 +410,25 @@ def sql_template(
             elif opname == 'DELETE_FAST':
                 del context[argval]
             elif opname == 'LOAD_CLOSURE':
-                raise exception.DisError(instruction)
+                # TODO: reference is not yet supported
+                if argval in context:
+                    stack.append(context[argval])
+                else:
+                    stack.append(ast.IdentifierExpression(argval))
             elif opname == 'LOAD_DEREF':
-                raise exception.DisError(instruction)
+                if argval in context:
+                    stack.append(context[argval])
+                else:
+                    stack.append(ast.IdentifierExpression(argval))
             elif opname == 'LOAD_CLASSDEREF':
-                raise exception.DisError(instruction)
+                if argval in context:
+                    stack.append(context[argval])
+                else:
+                    stack.append(ast.IdentifierExpression(argval))
             elif opname == 'STORE_DEREF':
-                raise exception.DisError(instruction)
+                context[argval] = stack.pop()
             elif opname == 'DELETE_DEREF':
-                raise exception.DisError(instruction)
+                del context[argval]
             elif opname == 'RAISE_VARARGS':
                 raise exception.DisError(instruction)
             elif opname == 'CALL_FUNCTION':
@@ -423,13 +461,44 @@ def sql_template(
 
                     stack[-1] = ast.CallExpression(stack[-1], arguments)
                 elif isinstance(stack[-1], ast.BaseStatement):
+                    if kw_arguments:
+                        raise exception.DisError(instruction)
+
                     stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
                 else:
                     # TODO
                     pass
             elif opname == 'CALL_FUNCTION_EX':
-                # TODO
-                pass
+                if argval:
+                    assert isinstance(stack[-2], ast.ValueExpression)
+                    assert isinstance(stack[-2].get(), tuple)
+                    assert isinstance(stack[-1], ast.ValueExpression)
+                    assert isinstance(stack[-1].get(), dict)
+
+                    arguments = stack[-2].get()
+                    kw_arguments = stack[-1].get()
+                    del stack[-2:]
+                else:
+                    assert isinstance(stack[-1], ast.ValueExpression)
+                    assert isinstance(stack[-1].get(), tuple)
+
+                    arguments = stack[-1].get()
+                    kw_arguments = {}
+                    del stack[-1]
+
+                if isinstance(stack[-1]):
+                    if kw_arguments:
+                        raise exception.DisError(instruction)
+
+                    stack[-1] = ast.CallExpression(stack[-1], arguments)
+                elif isinstance(stack[-1], ast.BaseStatement):
+                    if kw_arguments:
+                        raise exception.DisError(instruction)
+
+                    stack[-1] = ast.ListClauseStatement(stack[-1], arguments)
+                else:
+                    # TODO
+                    pass
             elif opname == 'LOAD_METHOD':
                 if isinstance(stack[-1], ast.BaseStatement):
                     stack[-1] = ast.SimpleClauseStatement(stack[-1], argval)
