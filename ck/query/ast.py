@@ -279,9 +279,6 @@ class ListClause(BaseStatement):
             previous: BaseStatement,
             arguments: typing.List[BaseAST]
     ) -> None:
-        if isinstance(previous, ListClause):
-            raise TypeError()
-
         self._previous = previous
         self._arguments = arguments
 
@@ -291,5 +288,8 @@ class ListClause(BaseStatement):
             argument.render_expression()
             for argument in self._arguments
         )
+
+        if isinstance(self._previous, ListClause):
+            return f'{previous_text} ({arguments_text})'
 
         return f'{previous_text} {arguments_text}'
