@@ -60,18 +60,22 @@ def test_session_local() -> None:
     )
 
     pid_1 = local_session.stop()
+
     assert pid_1 is not None
     assert local_session.get_pid() is None
 
     pid_2 = local_session.stop()
+
     assert pid_2 is None
     assert local_session.get_pid() is None
 
     pid_3 = local_session.start()
+
     assert pid_3 is not None
     assert local_session.get_pid() is not None
 
     pid_4 = local_session.start()
+
     assert pid_4 is None
     assert local_session.get_pid() == pid_3
 
@@ -94,18 +98,22 @@ def test_session_remote() -> None:
     )
 
     pid_1 = remote_session.stop()
+
     assert pid_1 is not None
     assert remote_session.get_pid() is None
 
     pid_2 = remote_session.stop()
+
     assert pid_2 is None
     assert remote_session.get_pid() is None
 
     pid_3 = remote_session.start()
+
     assert pid_3 is not None
     assert remote_session.get_pid() is not None
 
     pid_4 = remote_session.start()
+
     assert pid_4 is None
     assert remote_session.get_pid() == pid_3
 
@@ -149,6 +157,7 @@ def test_session_gen_bytes() -> None:
         'insert into pyck_test format TSV',
         data=b'hello\nworld\n'
     )
+
     assert local_session.query(
         'select * from pyck_test format TSV'
     ) == b'hello\nworld\n'
@@ -178,6 +187,7 @@ def test_session_gen_stream() -> None:
     )
     dataframe_2 = pandas.read_csv(io.TextIOWrapper(read_stream))
     join()
+
     assert dataframe_2.x.to_list() == dataframe_1.x.to_list()
 
     local_session.query('drop table pyck_test')
@@ -202,6 +212,7 @@ def test_session_gen_file() -> None:
         'select * from pyck_test format TSV',
         path_out='/tmp/pyck_test_session_2'
     )
+
     assert open('/tmp/pyck_test_session_2', 'rb').read() == b'hello\nworld\n'
 
     local_session.query('drop table pyck_test')
@@ -220,6 +231,7 @@ def test_session_gen_pandas() -> None:
         dataframe=dataframe_1
     )
     dataframe_2 = local_session.query_pandas('select * from pyck_test')
+
     assert dataframe_2 is not None
     assert dataframe_2.x.to_list() == dataframe_1.x.to_list()
 
