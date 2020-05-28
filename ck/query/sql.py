@@ -71,6 +71,7 @@ def sql_template(
         elif opname == 'BINARY_SUBTRACT':
             stack[-2:] = ast.Call('minus', stack[-2:]),
         elif opname == 'BINARY_SUBSCR':
+            # TODO: subscr for slices?
             stack[-2:] = ast.Call('arrayElement', stack[-2:]),
         elif opname == 'BINARY_LSHIFT':
             stack[-2:] = ast.Call('bitShiftLeft', stack[-2:]),
@@ -158,7 +159,7 @@ def sql_template(
         elif opname == 'SETUP_ASYNC_WITH':
             raise exception.DisError(opname, argval)
         elif opname == 'PRINT_EXPR':
-            raise exception.DisError(opname, argval)
+            print(ast.unbox(stack.pop()))
         elif opname == 'SET_ADD':
             value = stack.pop()
 
@@ -180,11 +181,13 @@ def sql_template(
         elif opname == 'YIELD_FROM':
             raise exception.DisError(opname, argval)
         elif opname == 'SETUP_ANNOTATIONS':
-            raise exception.DisError(opname, argval)
+            if '__annotations__' not in context:
+                context['__annotations__'] = ast.Value({})
         elif opname == 'IMPORT_STAR':
+            module = __import__(argval)
             context.update({
-                name: ast.box(value)
-                for name, value in __import__(argval).__dict__.items()
+                name: ast.box(getattr(module, name))
+                for name in dir(module)
                 if not name.startswith('_')
             })
         elif opname == 'POP_BLOCK':
@@ -198,7 +201,7 @@ def sql_template(
         elif opname == 'END_FINALLY':
             raise exception.DisError(opname, argval)
         elif opname == 'LOAD_BUILD_CLASS':
-            raise exception.DisError(opname, argval)
+            stack.append(ast.Value(__build_class__))
         elif opname == 'SETUP_WITH':
             raise exception.DisError(opname, argval)
         elif opname == 'WITH_CLEANUP_START':
@@ -210,7 +213,9 @@ def sql_template(
         elif opname == 'DELETE_NAME':
             del context[argval]
         elif opname == 'UNPACK_SEQUENCE':
-            stack[-1:] = ast.unbox(stack[-1])[:argval]
+            if len(ast.unbox(stack[-1])) != argval:
+                raise ValueError()
+            stack[-1:] = ast.unbox(stack[-1])[::-1]
         elif opname == 'UNPACK_EX':
             if argval // 256:
                 stack[-1:] = (
@@ -382,6 +387,10 @@ def sql_template(
                     ]),
                     ast.Call('notEquals', stack[-2:]),
                 ]),
+            elif argval == 'exception match'
+                raise exception.DisError(opname, argval)
+            elif argval == 'BAD':
+                raise exception.DisError(opname, argval)
             else:
                 raise exception.DisError(opname, argval)
         elif opname == 'IMPORT_NAME':
@@ -390,10 +399,10 @@ def sql_template(
                     argval,
                     fromlist=ast.unbox(stack[-2]),
                     level=ast.unbox(stack[-1])
-                ).__dict__
+                )
             ),
         elif opname == 'IMPORT_FROM':
-            context[argval] = ast.box(ast.unbox(stack[-1])[argval])
+            context[argval] = ast.box(getattr(ast.unbox(stack[-1]), argval))
         elif opname == 'JUMP_FORWARD':
             # TODO
             raise exception.DisError(opname, argval)
@@ -472,20 +481,20 @@ def sql_template(
                     stack[len(stack) - argval:]
                 ),
             else:
-                stack[-argval - 1] = ast.box(
+                stack[-argval - 1:] = ast.box(
                     ast.unbox(stack[-argval - 1])(
                         *(
                             ast.unbox(value)
                             for value in stack[len(stack) - argval:]
                         )
                     )
-                )
+                ),
         elif opname == 'CALL_FUNCTION_KW':
             names = ast.unbox(stack[-1])
 
             if isinstance(stack[-argval - 2], ast.Identifier):
                 if names:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-argval - 2:] = ast.Call(
                     stack[-argval - 2],
@@ -493,7 +502,7 @@ def sql_template(
                 ),
             elif isinstance(stack[-argval - 2], ast.Call):
                 if names:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-argval - 2:] = ast.Call(
                     stack[-argval - 2],
@@ -501,7 +510,7 @@ def sql_template(
                 ),
             elif isinstance(stack[-argval - 2], ast.BaseStatement):
                 if names:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-argval - 2:] = ast.ListClause(
                     stack[-argval - 2],
@@ -534,17 +543,17 @@ def sql_template(
 
             if isinstance(stack[-2], ast.Identifier):
                 if kw_arguments:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-2:] = ast.Call(stack[-2], ast.unbox(stack[-1])),
             elif isinstance(stack[-2], ast.Call):
                 if kw_arguments:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-2:] = ast.Call(stack[-2], ast.unbox(stack[-1])),
             elif isinstance(stack[-2], ast.BaseStatement):
                 if kw_arguments:
-                    raise exception.DisError(opname, argval)
+                    raise TypeError()
 
                 stack[-2:] = ast.ListClause(stack[-2], ast.unbox(stack[-1])),
             else:
@@ -565,7 +574,7 @@ def sql_template(
                 stack[-1:] = ast.SimpleClause(stack[-1], argval), stack[-1]
             else:
                 stack[-1:] = ast.Value(
-                    ast.unbox(stack[-1]).__getattribute__(argval).__func__
+                    getattr(ast.unbox(stack[-1]), argval).__func__
                 ), stack[-1]
         elif opname == 'CALL_METHOD':
             if isinstance(stack[-argval - 2], ast.BaseStatement):
@@ -658,7 +667,5 @@ def sql_template(
 
             if done:
                 return stack.pop()
-
-        raise exception.DisError(None, None)
 
     return build
