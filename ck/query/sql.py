@@ -28,19 +28,19 @@ def sql_template(
             'select_distinct': ast.Initial('select_distinct'),
             'insert_into': ast.Initial('insert_into'),
             **{
-                name: ast.Value(value)
+                name: ast.box(value)
                 for name, value in closure.builtins.items()
             },
             **{
-                name: ast.Value(value)
+                name: ast.box(value)
                 for name, value in closure.globals.items()
             },
             **{
-                name: ast.Value(value)
+                name: ast.box(value)
                 for name, value in closure.nonlocals.items()
             },
             **{
-                name: ast.Value(value)
+                name: ast.box(value)
                 for name, value in bound_arguments.arguments.items()
             },
         }
@@ -75,10 +75,10 @@ def sql_template(
             elif opname == 'UNARY_INVERT':
                 stack[-1] = ast.Call('bitNot', stack[-1:])
             elif opname == 'GET_ITER':
-                stack[-1] = ast.Value(iter(stack[-1].unbox()))
+                stack[-1] = ast.Value(iter(ast.unbox(stack[-1])))
             elif opname == 'GET_YIELD_FROM_ITER':
                 # TODO: more accurate semantic
-                stack[-1] = ast.Value(iter(stack[-1].unbox()))
+                stack[-1] = ast.Value(iter(ast.unbox(stack[-1])))
             elif opname == 'BINARY_POWER':
                 stack[-2:] = ast.Call('pow', stack[-2:]),
             elif opname == 'BINARY_MULTIPLY':
@@ -187,16 +187,16 @@ def sql_template(
             elif opname == 'SET_ADD':
                 value = stack.pop()
 
-                stack[-argval].unbox().add(value)
+                ast.unbox(stack[-argval]).add(value)
             elif opname == 'LIST_APPEND':
                 value = stack.pop()
 
-                stack[-argval].unbox().append(value)
+                ast.unbox(stack[-argval]).append(value)
             elif opname == 'MAP_ADD':
                 name, value = stack[-2:]
                 del stack[-2:]
 
-                stack[-argval].unbox()[name] = value
+                ast.unbox(stack[-argval])[name] = value
             elif opname == 'RETURN_VALUE':
                 return stack.pop()
             elif opname == 'YIELD_VALUE':
@@ -207,7 +207,7 @@ def sql_template(
                 raise exception.DisError(instruction)
             elif opname == 'IMPORT_STAR':
                 context.update({
-                    name: ast.Value(value)
+                    name: ast.box(value)
                     for name, value in __import__(argval).__dict__.items()
                     if not name.startswith('_')
                 })
@@ -234,18 +234,18 @@ def sql_template(
             elif opname == 'DELETE_NAME':
                 del context[argval]
             elif opname == 'UNPACK_SEQUENCE':
-                stack[-1:] = stack[-1].unbox()[:argval]
+                stack[-1:] = ast.unbox(stack[-1])[:argval]
             elif opname == 'UNPACK_EX':
                 if argval // 256:
                     stack[-1:] = (
-                        *stack[-1].unbox()[:argval % 256],
-                        stack[-1].unbox()[argval % 256:-argval // 256],
-                        *stack[-1].unbox()[-argval // 256:],
+                        *ast.unbox(stack[-1])[:argval % 256],
+                        ast.unbox(stack[-1])[argval % 256:-argval // 256],
+                        *ast.unbox(stack[-1])[-argval // 256:],
                     )
                 else:
                     stack[-1:] = (
-                        *stack[-1].unbox()[:argval % 256],
-                        stack[-1].unbox()[argval % 256:],
+                        *ast.unbox(stack[-1])[:argval % 256],
+                        ast.unbox(stack[-1])[argval % 256:],
                     )
             elif opname == 'STORE_ATTR':
                 # TODO
@@ -267,21 +267,21 @@ def sql_template(
             elif opname == 'BUILD_TUPLE':
                 stack[len(stack) - argval:] = ast.Value(
                     tuple(
-                        value.unbox()
+                        ast.unbox(value)
                         for value in stack[len(stack) - argval:]
                     )
                 ),
             elif opname == 'BUILD_LIST':
                 stack[len(stack) - argval:] = ast.Value(
                     [
-                        value.unbox()
+                        ast.unbox(value)
                         for value in stack[len(stack) - argval:]
                     ]
                 ),
             elif opname == 'BUILD_SET':
                 stack[len(stack) - argval:] = ast.Value(
                     {
-                        value.unbox()
+                        ast.unbox(value)
                         for value in stack[len(stack) - argval:]
                     }
                 ),
@@ -291,7 +291,7 @@ def sql_template(
                         zip(
                             stack[len(stack) - 2 * argval::2],
                             (
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in stack[len(stack) - 2 * argval + 1::2]
                             )
                         )
@@ -301,9 +301,9 @@ def sql_template(
                 stack[-argval - 1:] = ast.Value(
                     dict(
                         zip(
-                            stack[-1].unbox(),
+                            ast.unbox(stack[-1]),
                             (
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in stack[-argval - 1:-1]
                             )
                         )
@@ -312,7 +312,7 @@ def sql_template(
             elif opname == 'BUILD_STRING':
                 stack[len(stack) - argval:] = ast.Value(
                     ''.join(
-                        value.unbox()
+                        ast.unbox(value)
                         for value in stack[len(stack) - argval:]
                     )
                 ),
@@ -321,7 +321,7 @@ def sql_template(
                     tuple(
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox()
+                        for member in ast.unbox(value)
                     )
                 ),
             elif opname == 'BUILD_TUPLE_UNPACK_WITH_CALL':
@@ -329,7 +329,7 @@ def sql_template(
                     tuple(
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox()
+                        for member in ast.unbox(value)
                     )
                 ),
             elif opname == 'BUILD_LIST_UNPACK':
@@ -337,7 +337,7 @@ def sql_template(
                     [
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox()
+                        for member in ast.unbox(value)
                     ]
                 ),
             elif opname == 'BUILD_SET_UNPACK':
@@ -345,7 +345,7 @@ def sql_template(
                     {
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox()
+                        for member in ast.unbox(value)
                     }
                 ),
             elif opname == 'BUILD_MAP_UNPACK':
@@ -353,7 +353,7 @@ def sql_template(
                     dict(
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox().items()
+                        for member in ast.unbox(value).items()
                     )
                 ),
             elif opname == 'BUILD_MAP_UNPACK_WITH_CALL':
@@ -361,7 +361,7 @@ def sql_template(
                     dict(
                         member
                         for value in stack[len(stack) - argval:]
-                        for member in value.unbox().items()
+                        for member in ast.unbox(value).items()
                     )
                 ),
             elif opname == 'LOAD_ATTR':
@@ -412,12 +412,12 @@ def sql_template(
                 stack[-2:] = ast.Value(
                     __import__(
                         argval,
-                        fromlist=stack[-2].unbox(),
-                        level=stack[-1].unbox()
+                        fromlist=ast.unbox(stack[-2]),
+                        level=ast.unbox(stack[-1])
                     ).__dict__
                 ),
             elif opname == 'IMPORT_FROM':
-                context[argval] = ast.Value(stack[-1].unbox()[argval])
+                context[argval] = ast.box(ast.unbox(stack[-1])[argval])
             elif opname == 'JUMP_FORWARD':
                 # TODO
                 raise exception.DisError(instruction)
@@ -496,16 +496,16 @@ def sql_template(
                         stack[len(stack) - argval:]
                     ),
                 else:
-                    stack[-argval - 1] = ast.Value(
-                        stack[-argval - 1].unbox()(
+                    stack[-argval - 1] = ast.box(
+                        ast.unbox(stack[-argval - 1])(
                             *(
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in stack[len(stack) - argval:]
                             )
                         )
                     )
             elif opname == 'CALL_FUNCTION_KW':
-                names = stack[-1].unbox()
+                names = ast.unbox(stack[-1])
 
                 if isinstance(stack[-argval - 2], ast.Identifier):
                     if names:
@@ -532,17 +532,17 @@ def sql_template(
                         stack[-argval - 1:-1]
                     ),
                 else:
-                    stack[-argval - 2:] = ast.Value(
-                        stack[-argval - 2].unbox()(
+                    stack[-argval - 2:] = ast.box(
+                        ast.unbox(stack[-argval - 2])(
                             *(
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in stack[-argval - 1:-len(names) - 1]
                             ),
                             **dict(
                                 zip(
                                     names,
                                     (
-                                        value.unbox()
+                                        ast.unbox(value)
                                         for value in stack[-len(names) - 1:-1]
                                     )
                                 )
@@ -551,7 +551,7 @@ def sql_template(
                     ),
             elif opname == 'CALL_FUNCTION_EX':
                 if argval & 1:
-                    kw_arguments = stack[-1].unbox()
+                    kw_arguments = ast.unbox(stack[-1])
                     stack.pop()
                 else:
                     kw_arguments = {}
@@ -560,26 +560,26 @@ def sql_template(
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
-                    stack[-2:] = ast.Call(stack[-2], stack[-1].unbox()),
+                    stack[-2:] = ast.Call(stack[-2], ast.unbox(stack[-1])),
                 elif isinstance(stack[-2], ast.Call):
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
-                    stack[-2:] = ast.Call(stack[-2], stack[-1].unbox()),
+                    stack[-2:] = ast.Call(stack[-2], ast.unbox(stack[-1])),
                 elif isinstance(stack[-2], ast.BaseStatement):
                     if kw_arguments:
                         raise exception.DisError(instruction)
 
-                    stack[-2:] = ast.ListClause(stack[-2], stack[-1].unbox()),
+                    stack[-2:] = ast.ListClause(stack[-2], ast.unbox(stack[-1])),
                 else:
-                    stack[-2:] = ast.Value(
-                        stack[-2].unbox()(
+                    stack[-2:] = ast.box(
+                        ast.unbox(stack[-2])(
                             *(
-                                value.unbox()
-                                for value in stack[-1].unbox()
+                                ast.unbox(value)
+                                for value in ast.unbox(stack[-1])
                             ),
                             **(
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in kw_arguments
                             )
                         )
@@ -589,7 +589,7 @@ def sql_template(
                     stack[-1:] = ast.SimpleClause(stack[-1], argval), stack[-1]
                 else:
                     stack[-1:] = ast.Value(
-                        stack[-1].unbox().__getattribute__(argval).__func__
+                        ast.unbox(stack[-1]).__getattribute__(argval).__func__
                     ), stack[-1]
             elif opname == 'CALL_METHOD':
                 if isinstance(stack[-argval - 2], ast.BaseStatement):
@@ -598,10 +598,10 @@ def sql_template(
                         stack[len(stack) - argval:]
                     ),
                 else:
-                    stack[-argval - 2:] = ast.Value(
-                        stack[-argval - 2].unbox()(
+                    stack[-argval - 2:] = ast.box(
+                        ast.unbox(stack[-argval - 2])(
                             *(
-                                value.unbox()
+                                ast.unbox(value)
                                 for value in stack[-argval - 1:]
                             )
                         )
@@ -613,7 +613,7 @@ def sql_template(
                 stack[len(stack) - argval:] = ast.Value(
                     slice(
                         *(
-                            value.unbox()
+                            ast.unbox(value)
                             for value in stack[len(stack) - argval:]
                         )
                     )
@@ -622,19 +622,19 @@ def sql_template(
                 raise exception.DisError(instruction)
             elif opname == 'FORMAT_VALUE':
                 if argval & 4:
-                    spec = stack[-1].unbox()
+                    spec = ast.unbox(stack[-1])
                     stack.pop()
                 else:
                     spec = ''
 
                 if argval & 3 == 0:
-                    stack[-1] = ast.Value(format(stack[-1].unbox, spec))
+                    stack[-1] = ast.Value(format(ast.unbox(stack[-1]), spec))
                 elif argval & 3 == 1:
-                    stack[-1] = ast.Value(format(str(stack[-1].unbox), spec))
+                    stack[-1] = ast.Value(format(str(ast.unbox(stack[-1])), spec))
                 elif argval & 3 == 2:
-                    stack[-1] = ast.Value(format(repr(stack[-1].unbox), spec))
+                    stack[-1] = ast.Value(format(repr(ast.unbox(stack[-1])), spec))
                 elif argval & 3 == 3:
-                    stack[-1] = ast.Value(format(ascii(stack[-1].unbox), spec))
+                    stack[-1] = ast.Value(format(ascii(ast.unbox(stack[-1])), spec))
             elif opname == 'HAVE_ARGUMENT':
                 raise exception.DisError(instruction)
             else:

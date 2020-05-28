@@ -150,10 +150,25 @@ def escape_value(
     raise TypeError()
 
 
-class BaseAST(abc.ABC):
-    def unbox(self) -> typing.Any:
-        return self
+def box(
+        value: typing.Any
+) -> BaseAST:
+    if isinstance(value, BaseAST):
+        return value
 
+    return Value(value)
+
+
+def unbox(
+        value: BaseAST
+) -> typing.Any:
+    if isinstance(value, Value):
+        return value._value
+
+    return value
+
+
+class BaseAST(abc.ABC):
     @abc.abstractmethod
     def render_expression(self) -> str:
         pass
@@ -174,9 +189,6 @@ class Value(BaseExpression):
             value: typing.Any
     ) -> None:
         self._value = value
-
-    def unbox(self) -> typing.Any:
-        return self._value
 
     def render_expression(self) -> str:
         return escape_value(self._value)
