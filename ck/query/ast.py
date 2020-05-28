@@ -168,7 +168,7 @@ class BaseExpression(BaseAST):
         return f'select {self.render_expression()}'
 
 
-class ValueExpression(BaseExpression):
+class Value(BaseExpression):
     def __init__(
             self,
             value: typing.Any
@@ -182,7 +182,7 @@ class ValueExpression(BaseExpression):
         return escape_value(self._value)
 
 
-class IdentifierExpression(BaseExpression):
+class Identifier(BaseExpression):
     def __init__(
             self,
             name: str
@@ -193,7 +193,7 @@ class IdentifierExpression(BaseExpression):
         return escape_text(self._name, '`')
 
 
-class CallExpression(BaseExpression):
+class Call(BaseExpression):
     def __init__(
             self,
             function: typing.Union[
@@ -224,7 +224,7 @@ class BaseStatement(BaseAST):
         return f'({self.render_statement()})'
 
 
-class InitialStatement(BaseStatement):
+class Initial(BaseStatement):
     def __init__(
             self,
             name: str
@@ -241,7 +241,7 @@ class InitialStatement(BaseStatement):
         return name_text
 
 
-class SimpleClauseStatement(BaseStatement):
+class SimpleClause(BaseStatement):
     def __init__(
             self,
             previous: BaseStatement,
@@ -261,13 +261,13 @@ class SimpleClauseStatement(BaseStatement):
         return f'{previous_text} {name_text}'
 
 
-class ListClauseStatement(BaseStatement):
+class ListClause(BaseStatement):
     def __init__(
             self,
             previous: BaseStatement,
             arguments: typing.List[BaseAST]
     ) -> None:
-        if isinstance(previous, ListClauseStatement):
+        if isinstance(previous, ListClause):
             raise TypeError()
 
         self._previous = previous
