@@ -1,6 +1,7 @@
 import dis
 import functools
 import inspect
+import types
 import typing
 
 from ck import exception
@@ -387,7 +388,7 @@ def sql_template(
                     ]),
                     ast.Call('notEquals', stack[-2:]),
                 ]),
-            elif argval == 'exception match'
+            elif argval == 'exception match':
                 raise exception.DisError(opname, argval)
             elif argval == 'BAD':
                 raise exception.DisError(opname, argval)
@@ -443,11 +444,7 @@ def sql_template(
         elif opname == 'DELETE_FAST':
             del context[argval]
         elif opname == 'LOAD_CLOSURE':
-            # TODO: reference is not yet supported
-            if argval in context:
-                stack.append(context[argval])
-            else:
-                stack.append(ast.Identifier(argval))
+            stack.append(ast.Value((context, argval)))
         elif opname == 'LOAD_DEREF':
             if argval in context:
                 stack.append(context[argval])
@@ -592,8 +589,33 @@ def sql_template(
                     )
                 ),
         elif opname == 'MAKE_FUNCTION':
-            # TODO
-            raise exception.DisError(opname, argval)
+            if argval & 8:
+                function = types.FunctionType(
+                    ast.unbox(stack[-2]),
+                    context,
+                    ast.unbox(stack[-1]),
+                    closure=ast.unbox(stack[-1])
+                )
+                del stack[-3:]
+            else:
+                function = types.FunctionType(
+                    ast.unbox(stack[-2]),
+                    context,
+                    ast.unbox(stack[-1])
+                )
+                del stack[-2:]
+
+            if argval & 4:
+                # notice: annotation is not used
+                stack.pop()
+
+            if argval & 2:
+                function.__kw_defaults__ = ast.unbox(stack.pop())
+
+            if argval & 1:
+                function.__defaults__ = ast.unbox(stack.pop())
+
+            stack.append(ast.Value(function))
         elif opname == 'BUILD_SLICE':
             stack[len(stack) - argval:] = ast.Value(
                 slice(
