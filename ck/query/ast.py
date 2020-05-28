@@ -74,7 +74,7 @@ def escape_buffer(
     return f'{quote}{result}{quote}'
 
 
-def escape_value(
+def escape_value(  # pylint: disable=too-many-return-statements
         value: typing.Any
 ) -> str:
     if value is None:
@@ -174,6 +174,9 @@ class Value(BaseExpression):
             value: typing.Any
     ) -> None:
         self._value = value
+
+    def get(self) -> typing.Any:
+        return self._value
 
     def render_expression(self) -> str:
         return escape_value(self._value)
@@ -296,6 +299,6 @@ def unbox(
         value: BaseAST
 ) -> typing.Any:
     if isinstance(value, Value):
-        return value._value
+        return value.get()
 
     return value
