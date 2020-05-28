@@ -38,32 +38,6 @@ def test_query_escape_value() -> None:
     assert query.ast.escape_value({1: 2}) == 'array(tuple(1, 2))'
 
 
-def test_query_box() -> None:
-    value = query.ast.Value(1)
-    identifier = query.ast.Identifier('1')
-
-    assert query.ast.box(1).render_expression() == value.render_expression()
-    assert query.ast.box(identifier) is identifier
-
-
-def test_query_unbox() -> None:
-    value = query.ast.Value(1)
-    identifier = query.ast.Identifier('1')
-
-    assert query.ast.unbox(value) == 1
-    assert query.ast.unbox(identifier) is identifier
-
-
-def test_query_value() -> None:
-    value_1 = query.ast.Value(1)
-    value_2 = query.ast.Value(['1', 2, 3])
-
-    assert value_1.render_expression() == '1'
-    assert value_1.render_statement() == 'select 1'
-    assert value_2.render_expression() == 'array(\'1\', 2, 3)'
-    assert value_2.render_statement() == 'select array(\'1\', 2, 3)'
-
-
 def test_query_identifier() -> None:
     identifier_1 = query.ast.Identifier('test')
     identifier_2 = query.ast.Identifier('test`')
@@ -76,9 +50,8 @@ def test_query_identifier() -> None:
 
 def test_query_call() -> None:
     identifier = query.ast.Identifier('test')
-    value = query.ast.Value(1)
     call_1 = query.ast.Call('test', [])
-    call_2 = query.ast.Call(identifier, [value, call_1])
+    call_2 = query.ast.Call(identifier, [1, call_1])
 
     assert call_1.render_expression() == 'test()'
     assert call_1.render_statement() == 'select test()'
@@ -109,9 +82,8 @@ def test_query_simple_clause() -> None:
 
 def test_query_list_clause() -> None:
     initial = query.ast.Initial('select')
-    value = query.ast.Value(1)
     list_clause_1 = query.ast.ListClause(initial, [])
-    list_clause_2 = query.ast.ListClause(initial, [value, list_clause_1])
+    list_clause_2 = query.ast.ListClause(initial, [1, list_clause_1])
 
     assert list_clause_1.render_expression() == '(select)'
     assert list_clause_1.render_statement() == 'select'

@@ -150,6 +150,9 @@ def escape_value(  # pylint: disable=too-many-return-statements
 
         return f'array({members_text})'
 
+    if isinstance(value, BaseAST):
+        return value.render_expression()
+
     raise TypeError()
 
 
@@ -168,20 +171,6 @@ class BaseExpression(BaseAST):
         return f'select {self.render_expression()}'
 
 
-class Value(BaseExpression):
-    def __init__(
-            self,
-            value: typing.Any
-    ) -> None:
-        self._value = value
-
-    def get(self) -> typing.Any:
-        return self._value
-
-    def render_expression(self) -> str:
-        return escape_value(self._value)
-
-
 class Identifier(BaseExpression):
     def __init__(
             self,
@@ -196,23 +185,17 @@ class Identifier(BaseExpression):
 class Call(BaseExpression):
     def __init__(
             self,
-            function: typing.Union[
-                BaseAST,
-                str
-            ],
-            arguments: typing.List[BaseAST]
+            function: typing.Any,
+            arguments: typing.List[typing.Any]
     ) -> None:
         self._function = function
         self._arguments = arguments
 
     def render_expression(self) -> str:
-        if isinstance(self._function, BaseAST):
-            function_text = self._function.render_expression()
-        else:
-            function_text = self._function
+        function_text = escape_value(self._function)
 
         arguments_text = ', '.join(
-            argument.render_expression()
+            escape_value(argument)
             for argument in self._arguments
         )
 
@@ -265,7 +248,7 @@ class ListClause(BaseStatement):
     def __init__(
             self,
             previous: BaseStatement,
-            arguments: typing.List[BaseAST]
+            arguments: typing.List[typing.Any]
     ) -> None:
         self._previous = previous
         self._arguments = arguments
@@ -273,7 +256,7 @@ class ListClause(BaseStatement):
     def render_statement(self) -> str:
         previous_text = self._previous.render_statement()
         arguments_text = ', '.join(
-            argument.render_expression()
+            escape_value(argument)
             for argument in self._arguments
         )
 
@@ -284,21 +267,3 @@ class ListClause(BaseStatement):
             return f'{previous_text} {arguments_text}'
 
         return previous_text
-
-
-def box(
-        value: typing.Any
-) -> BaseAST:
-    if isinstance(value, BaseAST):
-        return value
-
-    return Value(value)
-
-
-def unbox(
-        value: BaseAST
-) -> typing.Any:
-    if isinstance(value, Value):
-        return value.get()
-
-    return value
