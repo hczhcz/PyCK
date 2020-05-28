@@ -80,8 +80,11 @@ def escape_value(
     if value is None:
         return 'null'
 
-    if isinstance(value, str):
-        return escape_text(value, '\'')
+    if value is Ellipsis:
+        return '*'
+
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
 
     if isinstance(value, int):
         return str(value)
@@ -111,13 +114,17 @@ def escape_value(
     if isinstance(value, range):
         return f'range({value.start}, {value.stop}, {value.step})'
 
-    if isinstance(value, dict):
-        members_text = ', '.join(
-            escape_value(member)
-            for member in value.items()
-        )
+    if isinstance(value, str):
+        return escape_text(value, '\'')
 
-        return f'array({members_text})'
+    if isinstance(value, bytes):
+        return escape_buffer(value, '\'')
+
+    if isinstance(value, bytearray):
+        return escape_buffer(value, '\'')
+
+    if isinstance(value, memoryview):
+        return escape_buffer(value, '\'')
 
     if isinstance(value, set):
         members_text = ', '.join(
@@ -135,37 +142,15 @@ def escape_value(
 
         return f'array({members_text})'
 
-    if isinstance(value, bool):
-        return 'true' if value else 'false'
+    if isinstance(value, dict):
+        members_text = ', '.join(
+            escape_value(member)
+            for member in value.items()
+        )
 
-    if isinstance(value, bytes):
-        return escape_buffer(value, '\'')
-
-    if isinstance(value, bytearray):
-        return escape_buffer(value, '\'')
-
-    if isinstance(value, memoryview):
-        return escape_buffer(value, '\'')
+        return f'array({members_text})'
 
     raise TypeError()
-
-
-def box(
-        value: typing.Any
-) -> BaseAST:
-    if isinstance(value, BaseAST):
-        return value
-
-    return Value(value)
-
-
-def unbox(
-        value: BaseAST
-) -> typing.Any:
-    if isinstance(value, Value):
-        return value._value
-
-    return value
 
 
 class BaseAST(abc.ABC):
@@ -292,4 +277,25 @@ class ListClause(BaseStatement):
         if isinstance(self._previous, ListClause):
             return f'{previous_text} ({arguments_text})'
 
-        return f'{previous_text} {arguments_text}'
+        if arguments_text:
+            return f'{previous_text} {arguments_text}'
+
+        return previous_text
+
+
+def box(
+        value: typing.Any
+) -> BaseAST:
+    if isinstance(value, BaseAST):
+        return value
+
+    return Value(value)
+
+
+def unbox(
+        value: BaseAST
+) -> typing.Any:
+    if isinstance(value, Value):
+        return value._value
+
+    return value
