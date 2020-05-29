@@ -11,16 +11,16 @@ from ck.query import ast
 def sql_template(
         function: typing.Callable[..., typing.Any]
 ) -> typing.Callable[..., str]:
-    closure = inspect.getclosurevars(function)
     signature = inspect.signature(function)
-
-    bytecode = dis.Bytecode(function)
-    instructions = list(bytecode)
+    instructions = list(dis.get_instructions(function))
 
     def run(
+            global_dict: typing.Dict[str, typing.Any],
+            local_dict: typing.Dict[str, typing.Any],
+            cells: typing.Tuple[typing.Any, ...],
             stack: typing.List[typing.Any],
-            context: typing.Dict[str, typing.Any],
             opname: str,
+            arg: int,
             argval: typing.Any
     ) -> bool:
         # TODO
@@ -136,155 +136,158 @@ def sql_template(
                 ]),
             ]),
         elif opname == 'GET_AWAITABLE':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'GET_AITER':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'GET_ANEXT':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'END_ASYNC_FOR':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'BEFORE_ASYNC_WITH':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'SETUP_ASYNC_WITH':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'PRINT_EXPR':
             print(stack.pop())
         elif opname == 'SET_ADD':
             value = stack.pop()
 
-            stack[-argval].add(value)
+            stack[-arg].add(value)
         elif opname == 'LIST_APPEND':
             value = stack.pop()
 
-            stack[-argval].append(value)
+            stack[-arg].append(value)
         elif opname == 'MAP_ADD':
             # pylint: disable=unbalanced-tuple-unpacking
             name, value = stack[-2:]
             del stack[-2:]
 
-            stack[-argval][name] = value
+            stack[-arg][name] = value
         elif opname == 'RETURN_VALUE':
             return True
         elif opname == 'YIELD_VALUE':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'YIELD_FROM':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'SETUP_ANNOTATIONS':
-            if '__annotations__' not in context:
-                context['__annotations__'] = {}
+            if '__annotations__' not in loca:
+                local_dict['__annotations__'] = {}
         elif opname == 'IMPORT_STAR':
-            module = __import__(argval)
-            context.update({
+            module = stack.pop()
+
+            local_dict.update({
                 name: getattr(module, name)
                 for name in dir(module)
                 if not name.startswith('_')
             })
         elif opname == 'POP_BLOCK':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'POP_EXCEPT':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'POP_FINALLY':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'BEGIN_FINALLY':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'END_FINALLY':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'LOAD_BUILD_CLASS':
             stack.append(__build_class__)
         elif opname == 'SETUP_WITH':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'WITH_CLEANUP_START':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'WITH_CLEANUP_FINISH':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'STORE_NAME':
-            context[argval] = stack.pop()
+            local_dict[argval] = stack.pop()
         elif opname == 'DELETE_NAME':
-            del context[argval]
+            del local_dict[argval]
         elif opname == 'UNPACK_SEQUENCE':
-            if len(stack[-1]) != argval:
+            if len(stack[-1]) != arg:
                 raise ValueError()
             stack[-1:] = stack[-1][::-1]
         elif opname == 'UNPACK_EX':
-            if argval // 256:
+            if arg // 256:
                 stack[-1:] = (
-                    *stack[-1][:argval % 256],
-                    stack[-1][argval % 256:-argval // 256],
-                    *stack[-1][-argval // 256:],
+                    *stack[-1][:arg % 256],
+                    stack[-1][arg % 256:-arg // 256],
+                    *stack[-1][-arg // 256:],
                 )
             else:
                 stack[-1:] = (
-                    *stack[-1][:argval % 256],
-                    stack[-1][argval % 256:],
+                    *stack[-1][:arg % 256],
+                    stack[-1][arg % 256:],
                 )
         elif opname == 'STORE_ATTR':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'DELETE_ATTR':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'STORE_GLOBAL':
-            context[argval] = stack.pop()
+            global_dict[argval] = stack.pop()
         elif opname == 'DELETE_GLOBAL':
-            del context[argval]
+            del global_dict[argval]
         elif opname == 'LOAD_CONST':
             stack.append(argval)
         elif opname == 'LOAD_NAME':
-            if argval in context:
-                stack.append(context[argval])
+            if argval in local_dict:
+                stack.append(local_dict[argval])
+            elif argval in global_dict:
+                stack.append(global_dict[argval])
             else:
                 stack.append(ast.Identifier(argval))
         elif opname == 'BUILD_TUPLE':
-            stack[len(stack) - argval:] = tuple(stack[len(stack) - argval:]),
+            stack[len(stack) - arg:] = tuple(stack[len(stack) - arg:]),
         elif opname == 'BUILD_LIST':
-            stack[len(stack) - argval:] = stack[len(stack) - argval:],
+            stack[len(stack) - arg:] = stack[len(stack) - arg:],
         elif opname == 'BUILD_SET':
-            stack[len(stack) - argval:] = set(stack[len(stack) - argval:]),
+            stack[len(stack) - arg:] = set(stack[len(stack) - arg:]),
         elif opname == 'BUILD_MAP':
-            stack[len(stack) - 2 * argval:] = dict(
+            stack[len(stack) - 2 * arg:] = dict(
                 zip(
-                    stack[len(stack) - 2 * argval::2],
-                    stack[len(stack) - 2 * argval + 1::2]
+                    stack[len(stack) - 2 * arg::2],
+                    stack[len(stack) - 2 * arg + 1::2]
                 )
             ),
         elif opname == 'BUILD_CONST_KEY_MAP':
-            stack[-argval - 1:] = dict(zip(stack[-1], stack[-argval - 1:-1])),
+            stack[-arg - 1:] = dict(zip(stack[-1], stack[-arg - 1:-1])),
         elif opname == 'BUILD_STRING':
-            stack[len(stack) - argval:] = ''.join(stack[len(stack) - argval:]),
+            stack[len(stack) - arg:] = ''.join(stack[len(stack) - arg:]),
         elif opname == 'BUILD_TUPLE_UNPACK':
-            stack[len(stack) - argval:] = tuple(
+            stack[len(stack) - arg:] = tuple(
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value
             ),
         elif opname == 'BUILD_TUPLE_UNPACK_WITH_CALL':
-            stack[len(stack) - argval:] = tuple(
+            stack[len(stack) - arg:] = tuple(
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value
             ),
         elif opname == 'BUILD_LIST_UNPACK':
-            stack[len(stack) - argval:] = [
+            stack[len(stack) - arg:] = [
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value
             ],
         elif opname == 'BUILD_SET_UNPACK':
-            stack[len(stack) - argval:] = {
+            stack[len(stack) - arg:] = {
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value
             },
         elif opname == 'BUILD_MAP_UNPACK':
-            stack[len(stack) - argval:] = dict(
+            stack[len(stack) - arg:] = dict(
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value.items()
             ),
         elif opname == 'BUILD_MAP_UNPACK_WITH_CALL':
-            stack[len(stack) - argval:] = dict(
+            stack[len(stack) - arg:] = dict(
                 member
-                for value in stack[len(stack) - argval:]
+                for value in stack[len(stack) - arg:]
                 for member in value.items()
             ),
         elif opname == 'LOAD_ATTR':
@@ -327,11 +330,11 @@ def sql_template(
                     ast.Call('notEquals', stack[-2:]),
                 ]),
             elif argval == 'exception match':
-                raise exception.DisError(opname, argval)
+                raise exception.DisError(opname)
             elif argval == 'BAD':
-                raise exception.DisError(opname, argval)
+                raise exception.DisError(opname)
             else:
-                raise exception.DisError(opname, argval)
+                raise exception.DisError(opname)
         elif opname == 'IMPORT_NAME':
             stack[-2:] = __import__(
                 argval,
@@ -339,117 +342,108 @@ def sql_template(
                 level=stack[-1]
             ),
         elif opname == 'IMPORT_FROM':
-            context[argval] = getattr(stack[-1], argval)
+            local_dict[argval] = getattr(stack[-1], argval)
         elif opname == 'JUMP_FORWARD':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'POP_JUMP_IF_TRUE':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'POP_JUMP_IF_FALSE':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'JUMP_IF_TRUE_OR_POP':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'JUMP_IF_FALSE_OR_POP':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'JUMP_ABSOLUTE':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'FOR_ITER':
             # TODO
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'LOAD_GLOBAL':
-            if argval in context:
-                stack.append(context[argval])
+            if argval in global_dict:
+                stack.append(global_dict[argval])
             else:
                 stack.append(ast.Identifier(argval))
         elif opname == 'SETUP_FINALLY':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'CALL_FINALLY':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'LOAD_FAST':
-            if argval in context:
-                stack.append(context[argval])
+            if argval in local_dict:
+                stack.append(local_dict[argval])
             else:
                 stack.append(ast.Identifier(argval))
         elif opname == 'STORE_FAST':
-            context[argval] = stack.pop()
+            local_dict[argval] = stack.pop()
         elif opname == 'DELETE_FAST':
-            del context[argval]
+            del local_dict[argval]
         elif opname == 'LOAD_CLOSURE':
-            # TODO
-            stack.append((context, argval))
+            stack.append(cells[arg])
         elif opname == 'LOAD_DEREF':
-            if argval in context:
-                stack.append(context[argval])
-            else:
-                stack.append(ast.Identifier(argval))
+            stack.append(cells[arg].cell_contents)
         elif opname == 'LOAD_CLASSDEREF':
-            if argval in context:
-                stack.append(context[argval])
-            else:
-                stack.append(ast.Identifier(argval))
+            stack.append(cells[arg].cell_contents)
         elif opname == 'STORE_DEREF':
-            context[argval] = stack.pop()
+            cells[arg].cell_contents = stack.pop()
         elif opname == 'DELETE_DEREF':
-            del context[argval]
+            del cells[arg].cell_contents
         elif opname == 'RAISE_VARARGS':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'CALL_FUNCTION':
-            if isinstance(stack[-argval - 1], ast.Identifier):
-                stack[-argval - 1:] = ast.Call(
-                    stack[-argval - 1],
-                    stack[len(stack) - argval:]
+            if isinstance(stack[-arg - 1], ast.Identifier):
+                stack[-arg - 1:] = ast.Call(
+                    stack[-arg - 1],
+                    stack[len(stack) - arg:]
                 ),
-            elif isinstance(stack[-argval - 1], ast.Call):
-                stack[-argval - 1:] = ast.Call(
-                    stack[-argval - 1],
-                    stack[len(stack) - argval:]
+            elif isinstance(stack[-arg - 1], ast.Call):
+                stack[-arg - 1:] = ast.Call(
+                    stack[-arg - 1],
+                    stack[len(stack) - arg:]
                 ),
-            elif isinstance(stack[-argval - 1], ast.BaseStatement):
-                stack[-argval - 1:] = ast.ListClause(
-                    stack[-argval - 1],
-                    stack[len(stack) - argval:]
+            elif isinstance(stack[-arg - 1], ast.BaseStatement):
+                stack[-arg - 1:] = ast.ListClause(
+                    stack[-arg - 1],
+                    stack[len(stack) - arg:]
                 ),
             else:
-                stack[-argval - 1:] = stack[-argval - 1](
-                    *stack[len(stack) - argval:]
-                ),
+                stack[-arg - 1:] = stack[-arg - 1](*stack[len(stack) - arg:]),
         elif opname == 'CALL_FUNCTION_KW':
-            if isinstance(stack[-argval - 2], ast.Identifier):
+            if isinstance(stack[-arg - 2], ast.Identifier):
                 if stack[-1]:
                     raise TypeError()
 
-                stack[-argval - 2:] = ast.Call(
-                    stack[-argval - 2],
-                    stack[-argval - 1:-1]
+                stack[-arg - 2:] = ast.Call(
+                    stack[-arg - 2],
+                    stack[-arg - 1:-1]
                 ),
-            elif isinstance(stack[-argval - 2], ast.Call):
+            elif isinstance(stack[-arg - 2], ast.Call):
                 if stack[-1]:
                     raise TypeError()
 
-                stack[-argval - 2:] = ast.Call(
-                    stack[-argval - 2],
-                    stack[-argval - 1:-1]
+                stack[-arg - 2:] = ast.Call(
+                    stack[-arg - 2],
+                    stack[-arg - 1:-1]
                 ),
-            elif isinstance(stack[-argval - 2], ast.BaseStatement):
+            elif isinstance(stack[-arg - 2], ast.BaseStatement):
                 if stack[-1]:
                     raise TypeError()
 
-                stack[-argval - 2:] = ast.ListClause(
-                    stack[-argval - 2],
-                    stack[-argval - 1:-1]
+                stack[-arg - 2:] = ast.ListClause(
+                    stack[-arg - 2],
+                    stack[-arg - 1:-1]
                 ),
             else:
-                stack[-argval - 2:] = stack[-argval - 2](
-                    *stack[-argval - 1:-len(stack[-1]) - 1],
+                stack[-arg - 2:] = stack[-arg - 2](
+                    *stack[-arg - 1:-len(stack[-1]) - 1],
                     **dict(zip(stack[-1], stack[-len(stack[-1]) - 1:-1]))
                 ),
         elif opname == 'CALL_FUNCTION_EX':
-            if argval & 1:
+            if arg & 1:
                 kw_arguments = stack[-1]
                 stack.pop()
             else:
@@ -481,16 +475,16 @@ def sql_template(
                     stack[-1],
                 )
         elif opname == 'CALL_METHOD':
-            if isinstance(stack[-argval - 2], ast.BaseStatement):
-                stack[-argval - 2:] = ast.ListClause(
-                    stack[-argval - 2],
-                    stack[len(stack) - argval:]
+            if isinstance(stack[-arg - 2], ast.BaseStatement):
+                stack[-arg - 2:] = ast.ListClause(
+                    stack[-arg - 2],
+                    stack[len(stack) - arg:]
                 ),
             else:
-                stack[-argval - 2:] = stack[-argval - 2](*stack[-argval - 1:]),
+                stack[-arg - 2:] = stack[-arg - 2](*stack[-arg - 1:]),
         elif opname == 'MAKE_FUNCTION':
             # TODO
-            if argval & 8:
+            if arg & 8:
                 function = types.FunctionType(
                     stack[-2],
                     context,
@@ -506,40 +500,40 @@ def sql_template(
                 )
                 del stack[-2:]
 
-            if argval & 4:
+            if arg & 4:
                 # notice: annotation is not used
                 stack.pop()
 
-            if argval & 2:
+            if arg & 2:
                 function.__kwdefaults__ = stack.pop()
 
-            if argval & 1:
+            if arg & 1:
                 function.__defaults__ = stack.pop()
 
             stack.append(function)
         elif opname == 'BUILD_SLICE':
-            stack[len(stack) - argval:] = slice(stack[len(stack) - argval:]),
+            stack[len(stack) - arg:] = slice(stack[len(stack) - arg:]),
         elif opname == 'EXTENDED_ARG':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         elif opname == 'FORMAT_VALUE':
-            if argval & 4:
+            if arg & 4:
                 spec = stack[-1]
                 stack.pop()
             else:
                 spec = ''
 
-            if argval & 3 == 0:
+            if arg & 3 == 0:
                 stack[-1] = format(stack[-1], spec)
-            elif argval & 3 == 1:
+            elif arg & 3 == 1:
                 stack[-1] = format(str(stack[-1]), spec)
-            elif argval & 3 == 2:
+            elif arg & 3 == 2:
                 stack[-1] = format(repr(stack[-1]), spec)
-            elif argval & 3 == 3:
+            elif arg & 3 == 3:
                 stack[-1] = format(ascii(stack[-1]), spec)
         elif opname == 'HAVE_ARGUMENT':
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
         else:
-            raise exception.DisError(opname, argval)
+            raise exception.DisError(opname)
 
         return False
 
@@ -551,23 +545,43 @@ def sql_template(
         bound_arguments = signature.bind(*args, **kwargs)
         bound_arguments.apply_defaults()
 
-        stack: typing.List[typing.Any] = []
-        context: typing.Dict[str, typing.Any] = {
+        global_dict: typing.Dict[str, typing.Any] = {
             'with_': ast.Initial('with'),
             'select': ast.Initial('select'),
             'select_distinct': ast.Initial('select_distinct'),
             'insert_into': ast.Initial('insert_into'),
-            **closure.builtins,
-            **closure.globals,
-            **closure.nonlocals,
+        }
+
+        local_dict: typing.Dict[str, typing.Any] = {
             **bound_arguments.arguments,
         }
 
+        cells: typing.Tuple[types.CellType, ...] = [
+            *(function.__closure__ or ()),
+            *(
+                # TODO: types.CellType in python 3.8
+                (lambda x: lambda: x)(None).__closure__[0]
+                for _ in function.__code__.co_cellvars or ()
+            ),
+        ]
+
+        stack: typing.List[typing.Any] = []
+
         # notice: see dis.opmap
         for instruction in instructions:
-            done = run(stack, context, instruction.opname, instruction.argval)
+            done = run(
+                global_dict,
+                local_dict,
+                cells,
+                stack,
+                instruction.opname,
+                instruction.arg,
+                instruction.argval
+            )
 
             if done:
+                assert len(stack) == 1
+
                 return stack.pop()
 
     return build
