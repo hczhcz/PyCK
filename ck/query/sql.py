@@ -10,7 +10,7 @@ from ck.query import ast
 
 def sql_template(
         function: typing.Callable[..., typing.Any]
-) -> typing.Callable[..., str]:
+) -> typing.Callable[..., typing.Any]:
     signature = inspect.signature(function)
     instructions = list(dis.get_instructions(function))
 
@@ -20,7 +20,7 @@ def sql_template(
             cells: typing.Tuple[typing.Any, ...],
             stack: typing.List[typing.Any],
             opname: str,
-            arg: int,
+            arg: typing.Any,
             argval: typing.Any
     ) -> bool:
         # TODO
@@ -170,7 +170,7 @@ def sql_template(
         elif opname == 'YIELD_FROM':
             raise exception.DisError(opname)
         elif opname == 'SETUP_ANNOTATIONS':
-            if '__annotations__' not in loca:
+            if '__annotations__' not in local_dict:
                 local_dict['__annotations__'] = {}
         elif opname == 'IMPORT_STAR':
             module = stack.pop()
@@ -556,14 +556,14 @@ def sql_template(
             **bound_arguments.arguments,
         }
 
-        cells: typing.Tuple[types.CellType, ...] = [
+        cells: typing.Tuple[types.CellType, ...] = (
             *(function.__closure__ or ()),
             *(
                 # TODO: types.CellType in python 3.8
                 (lambda x: lambda: x)(None).__closure__[0]
                 for _ in function.__code__.co_cellvars or ()
             ),
-        ]
+        )
 
         stack: typing.List[typing.Any] = []
 

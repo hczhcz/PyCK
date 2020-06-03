@@ -153,6 +153,10 @@ def escape_value(  # pylint: disable=too-many-return-statements
     if isinstance(value, BaseAST):
         return value.render_expression()
 
+    # TODO: function?
+    # if ...:
+    #     return 'lambda(tuple(x, y), expr)'
+
     raise TypeError()
 
 
@@ -260,6 +264,7 @@ class ListClause(BaseStatement):
             for argument in self._arguments
         )
 
+        # TODO: handle "create table" separately
         if isinstance(self._previous, ListClause):
             return f'{previous_text} ({arguments_text})'
 
