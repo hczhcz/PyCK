@@ -33,7 +33,6 @@ def create_config(
 
     data = {
         'listen_host': '0.0.0.0',
-        'path': str(path),
         'tmp_path': str(tmp_path),
         'format_schema_path': str(format_schema_path),
         'user_files_path': str(user_files_path),
@@ -53,6 +52,7 @@ def create_config(
         **config.copy(),
         'tcp_port': str(tcp_port),
         'http_port': str(http_port),
+        'path': str(path),
     }
 
     # add profile
@@ -96,13 +96,14 @@ def create_config(
     assert isinstance(data['users'][user], dict)
 
     data['users'][user] = {
-        'profile': 'default',
-        'quota': 'default',
-        'password': password,
+        'access_management': '1',
         'networks': {
             'ip': '::/0',
         },
+        'profile': 'default',
+        'quota': 'default',
         **data['users'][user],
+        'password': password,
     }
 
     # add quota
