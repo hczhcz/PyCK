@@ -61,12 +61,12 @@ def run_http(
             thread.join(join_interval)
 
         if error is not None:
-            if connection is not None:
+            if connection:
                 connection.close()
 
             raise error  # pylint: disable=raising-bad-type
 
-        assert response is not None
+        assert response
 
         return response.status
 

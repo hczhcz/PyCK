@@ -57,14 +57,16 @@ def create_config(
 
     # add profile
 
-    assert isinstance(data['profiles'], dict)
+    if not isinstance(data['profiles'], dict):
+        raise TypeError()
 
     data['profiles'] = {
         'default': {},
         **data['profiles'],
     }
 
-    assert isinstance(data['profiles']['default'], dict)
+    if not isinstance(data['profiles']['default'], dict):
+        raise TypeError()
 
     data['profiles']['default'] = {
         'max_memory_usage_for_all_queries': str(memory_bound_1),
@@ -86,14 +88,16 @@ def create_config(
 
     # add user
 
-    assert isinstance(data['users'], dict)
+    if not isinstance(data['users'], dict):
+        raise TypeError()
 
     data['users'] = {
         user: {},
         **data['users'],
     }
 
-    assert isinstance(data['users'][user], dict)
+    if not isinstance(data['users'][user], dict):
+        raise TypeError()
 
     data['users'][user] = {
         'access_management': '1',
@@ -108,7 +112,8 @@ def create_config(
 
     # add quota
 
-    assert isinstance(data['quotas'], dict)
+    if not isinstance(data['quotas'], dict):
+        raise TypeError()
 
     data['quotas'] = {
         'default': {},
@@ -124,14 +129,15 @@ def create_config(
     ) -> None:
         if isinstance(data, dict):
             for key, value in data.items():
-                assert isinstance(key, str)
+                if not isinstance(key, str):
+                    raise TypeError()
 
                 subnode = xml.etree.ElementTree.SubElement(node, key)
                 build_xml(value, subnode)
-        else:
-            assert isinstance(data, str)
-
+        elif isinstance(data, str):
             node.text = data
+        else:
+            raise TypeError()
 
     root = xml.etree.ElementTree.Element('yandex')
 
