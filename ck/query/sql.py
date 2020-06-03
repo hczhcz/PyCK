@@ -408,7 +408,8 @@ def sql_template(
             elif isinstance(stack[-arg - 1], ast.BaseStatement):
                 stack[-arg - 1:] = ast.ListClause(
                     stack[-arg - 1],
-                    stack[len(stack) - arg:]
+                    stack[len(stack) - arg:],
+                    {}
                 ),
             else:
                 stack[-arg - 1:] = stack[-arg - 1](*stack[len(stack) - arg:]),
@@ -430,12 +431,10 @@ def sql_template(
                     stack[-arg - 1:-1]
                 ),
             elif isinstance(stack[-arg - 2], ast.BaseStatement):
-                if stack[-1]:
-                    raise TypeError()
-
                 stack[-arg - 2:] = ast.ListClause(
                     stack[-arg - 2],
-                    stack[-arg - 1:-1]
+                    stack[-arg - 1:-len(stack[-1]) - 1],
+                    dict(zip(stack[-1], stack[-len(stack[-1]) - 1:-1]))
                 ),
             else:
                 stack[-arg - 2:] = stack[-arg - 2](
@@ -460,10 +459,11 @@ def sql_template(
 
                 stack[-2:] = ast.Call(stack[-2], stack[-1]),
             elif isinstance(stack[-2], ast.BaseStatement):
-                if kw_arguments:
-                    raise TypeError()
-
-                stack[-2:] = ast.ListClause(stack[-2], stack[-1]),
+                stack[-2:] = ast.ListClause(
+                    stack[-2],
+                    stack[-1],
+                    kw_arguments
+                ),
             else:
                 stack[-2:] = stack[-2](*stack[-1], **kw_arguments),
         elif opname == 'LOAD_METHOD':
@@ -478,7 +478,8 @@ def sql_template(
             if isinstance(stack[-arg - 2], ast.BaseStatement):
                 stack[-arg - 2:] = ast.ListClause(
                     stack[-arg - 2],
-                    stack[len(stack) - arg:]
+                    stack[len(stack) - arg:],
+                    {}
                 ),
             else:
                 stack[-arg - 2:] = stack[-arg - 2](*stack[-arg - 1:]),

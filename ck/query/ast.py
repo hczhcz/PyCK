@@ -252,16 +252,26 @@ class ListClause(BaseStatement):
     def __init__(
             self,
             previous: BaseStatement,
-            arguments: typing.List[typing.Any]
+            arguments: typing.List[typing.Any],
+            kw_arguments: typing.Dict[str, typing.Any]
     ) -> None:
         self._previous = previous
         self._arguments = arguments
+        self._kw_arguments = kw_arguments
 
     def render_statement(self) -> str:
         previous_text = self._previous.render_statement()
         arguments_text = ', '.join(
-            escape_value(argument)
-            for argument in self._arguments
+            (
+                *(
+                    escape_value(argument)
+                    for argument in self._arguments
+                ),
+                *(
+                    f'''{escape_value(value)} as {escape_text(name, '`')}'''
+                    for name, value in self._kw_arguments.items()
+                ),
+            )
         )
 
         # TODO: handle "create table" separately

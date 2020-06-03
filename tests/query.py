@@ -82,10 +82,10 @@ def test_query_simple_clause() -> None:
 
 def test_query_list_clause() -> None:
     initial = query.ast.Initial('select')
-    list_clause_1 = query.ast.ListClause(initial, [])
-    list_clause_2 = query.ast.ListClause(initial, [1, list_clause_1])
+    list_clause_1 = query.ast.ListClause(initial, [], {})
+    list_clause_2 = query.ast.ListClause(initial, [1, list_clause_1], {'test': 2})
 
     assert list_clause_1.render_expression() == '(select)'
     assert list_clause_1.render_statement() == 'select'
-    assert list_clause_2.render_expression() == '(select 1, (select))'
-    assert list_clause_2.render_statement() == 'select 1, (select)'
+    assert list_clause_2.render_expression() == '(select 1, (select), 2 as `test`)'
+    assert list_clause_2.render_statement() == 'select 1, (select), 2 as `test`'
