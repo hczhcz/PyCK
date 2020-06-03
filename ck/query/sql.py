@@ -374,10 +374,7 @@ def sql_template(
         elif opname == 'CALL_FINALLY':
             raise exception.DisError(opname)
         elif opname == 'LOAD_FAST':
-            if argval in local_dict:
-                stack.append(local_dict[argval])
-            else:
-                stack.append(ast.Identifier(argval))
+            stack.append(local_dict[argval])
         elif opname == 'STORE_FAST':
             local_dict[argval] = stack.pop()
         elif opname == 'DELETE_FAST':
@@ -486,18 +483,22 @@ def sql_template(
         elif opname == 'MAKE_FUNCTION':
             # TODO
             if arg & 8:
-                function = types.FunctionType(
-                    stack[-2],
-                    context,
-                    stack[-1],
-                    closure=stack[-3]
+                function = sql_template(
+                    types.FunctionType(
+                        stack[-2],
+                        global_dict,
+                        stack[-1],
+                        closure=stack[-3]
+                    )
                 )
                 del stack[-3:]
             else:
-                function = types.FunctionType(
-                    stack[-2],
-                    context,
-                    stack[-1]
+                function = sql_template(
+                    types.FunctionType(
+                        stack[-2],
+                        global_dict,
+                        stack[-1]
+                    )
                 )
                 del stack[-2:]
 
