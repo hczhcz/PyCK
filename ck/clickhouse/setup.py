@@ -17,8 +17,9 @@ def create_config(
     path = pathlib.Path(data_dir)
 
     tmp_path = path.joinpath('tmp')
-    format_schema_path = path.joinpath('format_schema')
+    format_schema_path = path.joinpath('format_schemas')
     user_files_path = path.joinpath('user_files')
+    access_control_path = path.joinpath('access')
     log_path = path.joinpath('stdout.log')
     errorlog_path = path.joinpath('stderr.log')
     config_path = path.joinpath('config.xml')
@@ -36,6 +37,7 @@ def create_config(
         'tmp_path': str(tmp_path),
         'format_schema_path': str(format_schema_path),
         'user_files_path': str(user_files_path),
+        'access_control_path': str(access_control_path),
         'mark_cache_size': '5368709120',
         'logger': {
             'log': str(log_path),
