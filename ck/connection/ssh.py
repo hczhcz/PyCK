@@ -108,6 +108,7 @@ def run_ssh(
 
             raise error  # pylint: disable=raising-bad-type
 
-        return channel.recv_exit_status()  # type: ignore[no-any-return]
+        # TODO: remove int()
+        return int(channel.recv_exit_status())
 
     return join

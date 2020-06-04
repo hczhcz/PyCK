@@ -71,21 +71,21 @@ def test_query_initial() -> None:
 
 def test_query_simple_clause() -> None:
     initial = query.ast.Initial('select')
-    simple_clause_1 = query.ast.SimpleClause(initial, 'test')
-    simple_clause_2 = query.ast.SimpleClause(initial, '__test__test__')
+    clause_1 = query.ast.SimpleClause(initial, 'test')
+    clause_2 = query.ast.SimpleClause(initial, '__test__test__')
 
-    assert simple_clause_1.render_expression() == '(select test)'
-    assert simple_clause_1.render_statement() == 'select test'
-    assert simple_clause_2.render_expression() == '(select test test)'
-    assert simple_clause_2.render_statement() == 'select test test'
+    assert clause_1.render_expression() == '(select test)'
+    assert clause_1.render_statement() == 'select test'
+    assert clause_2.render_expression() == '(select test test)'
+    assert clause_2.render_statement() == 'select test test'
 
 
 def test_query_list_clause() -> None:
     initial = query.ast.Initial('select')
-    list_clause_1 = query.ast.ListClause(initial, [], {})
-    list_clause_2 = query.ast.ListClause(initial, [1, list_clause_1], {'test': 2})
+    clause_1 = query.ast.ListClause(initial, [], {})
+    clause_2 = query.ast.ListClause(initial, [1, clause_1], {'test': 2})
 
-    assert list_clause_1.render_expression() == '(select)'
-    assert list_clause_1.render_statement() == 'select'
-    assert list_clause_2.render_expression() == '(select 1, (select), 2 as `test`)'
-    assert list_clause_2.render_statement() == 'select 1, (select), 2 as `test`'
+    assert clause_1.render_expression() == '(select)'
+    assert clause_1.render_statement() == 'select'
+    assert clause_2.render_expression() == '(select 1, (select), 2 as `test`)'
+    assert clause_2.render_statement() == 'select 1, (select), 2 as `test`'

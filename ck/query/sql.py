@@ -9,8 +9,8 @@ from ck.query import ast
 
 
 def sql_template(
-        function: typing.Callable[..., typing.Any]
-) -> typing.Callable[..., typing.Any]:
+        function: types.FunctionType
+) -> types.FunctionType:
     signature = inspect.signature(function)
     instructions = list(dis.get_instructions(function))
 
@@ -158,7 +158,6 @@ def sql_template(
 
             stack[-arg].append(value)
         elif opname == 'MAP_ADD':
-            # pylint: disable=unbalanced-tuple-unpacking
             name, value = stack[-2:]
             del stack[-2:]
 
@@ -191,7 +190,7 @@ def sql_template(
         elif opname == 'END_FINALLY':
             raise exception.DisError(opname)
         elif opname == 'LOAD_BUILD_CLASS':
-            stack.append(__build_class__)
+            stack.append(__build_class__)  # type: ignore[name-defined]
         elif opname == 'SETUP_WITH':
             raise exception.DisError(opname)
         elif opname == 'WITH_CLEANUP_START':
@@ -558,11 +557,12 @@ def sql_template(
             **bound_arguments.arguments,
         }
 
-        cells: typing.Tuple[types.CellType, ...] = (
+        # pylint: disable=no-member
+        cells: typing.Tuple[types.CellType, ...] = (  # type: ignore
             *(function.__closure__ or ()),
             *(
                 # TODO: types.CellType in python 3.8
-                (lambda x: lambda: x)(None).__closure__[0]
+                (lambda x: lambda: x)(None).__closure__[0]  # type: ignore
                 for _ in function.__code__.co_cellvars or ()
             ),
         )
@@ -586,4 +586,7 @@ def sql_template(
 
                 return stack.pop()
 
-    return build
+        return None
+
+    # TODO
+    return typing.cast(types.FunctionType, build)
