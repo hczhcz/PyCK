@@ -14,4 +14,5 @@ Initial = ast.Initial
 ListClause = ast.ListClause
 SimpleClause = ast.SimpleClause
 
+sql_render = sql.sql_render
 sql_template = sql.sql_template

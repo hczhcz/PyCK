@@ -596,3 +596,16 @@ def sql_template(
 
     # TODO
     return typing.cast(types.FunctionType, build)
+
+
+def sql_render(
+        function: types.FunctionType,
+        *args: typing.Any,
+        **kwargs: typing.Any
+) -> str:
+    result = sql_template(function)(*args, **kwargs)
+
+    if isinstance(result, ast.BaseAST):
+        return result.render_statement()
+
+    raise TypeError()
