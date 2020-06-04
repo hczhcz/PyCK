@@ -28,9 +28,9 @@ def sql_template(
 
         def call_named(
                 name: str,
-                arguments: typing.List[typing.Any]
+                *args: typing.Any
         ) -> ast.BaseAST:
-            return ast.Call(ast.Identifier(name), arguments)
+            return ast.Call(ast.Raw(name), *args)
 
         if opname == 'NOP':
             pass
@@ -47,100 +47,104 @@ def sql_template(
         elif opname == 'DUP_TOP_TWO':
             stack.extend(stack[-2:])
         elif opname == 'UNARY_POSITIVE':
-            stack[-1] = call_named('negate', [
-                call_named('negate', stack[-1:]),
-            ])
+            stack[-1] = call_named('negate', call_named('negate', stack[-1]))
         elif opname == 'UNARY_NEGATIVE':
-            stack[-1] = call_named('negate', stack[-1:])
+            stack[-1] = call_named('negate', stack[-1])
         elif opname == 'UNARY_NOT':
-            stack[-1] = call_named('not', stack[-1:])
+            stack[-1] = call_named('not', stack[-1])
         elif opname == 'UNARY_INVERT':
-            stack[-1] = call_named('bitNot', stack[-1:])
+            stack[-1] = call_named('bitNot', stack[-1])
         elif opname == 'GET_ITER':
             stack[-1] = iter(stack[-1])
         elif opname == 'GET_YIELD_FROM_ITER':
             # TODO: more accurate semantic
             stack[-1] = iter(stack[-1])
         elif opname == 'BINARY_POWER':
-            stack[-2:] = call_named('pow', stack[-2:]),
+            stack[-2:] = call_named('pow', *stack[-2:]),
         elif opname == 'BINARY_MULTIPLY':
-            stack[-2:] = call_named('multiply', stack[-2:]),
+            stack[-2:] = call_named('multiply', *stack[-2:]),
         elif opname == 'BINARY_MATRIX_MULTIPLY':
-            stack[-2:] = call_named('cast', stack[-2:]),
+            stack[-2:] = call_named('cast', *stack[-2:]),
         elif opname == 'BINARY_FLOOR_DIVIDE':
-            stack[-2:] = call_named('intDiv', stack[-2:]),
+            stack[-2:] = call_named('intDiv', *stack[-2:]),
         elif opname == 'BINARY_TRUE_DIVIDE':
-            stack[-2:] = call_named('divide', stack[-2:]),
+            stack[-2:] = call_named('divide', *stack[-2:]),
         elif opname == 'BINARY_MODULO':
-            stack[-2:] = call_named('modulo', stack[-2:]),
+            stack[-2:] = call_named('modulo', *stack[-2:]),
         elif opname == 'BINARY_ADD':
-            stack[-2:] = call_named('plus', stack[-2:]),
+            stack[-2:] = call_named('plus', *stack[-2:]),
         elif opname == 'BINARY_SUBTRACT':
-            stack[-2:] = call_named('minus', stack[-2:]),
+            stack[-2:] = call_named('minus', *stack[-2:]),
         elif opname == 'BINARY_SUBSCR':
             # TODO: subscr for slices?
-            stack[-2:] = call_named('arrayElement', stack[-2:]),
+            stack[-2:] = call_named('arrayElement', *stack[-2:]),
         elif opname == 'BINARY_LSHIFT':
-            stack[-2:] = call_named('bitShiftLeft', stack[-2:]),
+            stack[-2:] = call_named('bitShiftLeft', *stack[-2:]),
         elif opname == 'BINARY_RSHIFT':
-            stack[-2:] = call_named('bitShiftRight', stack[-2:]),
+            stack[-2:] = call_named('bitShiftRight', *stack[-2:]),
         elif opname == 'BINARY_AND':
-            stack[-2:] = call_named('bitAnd', stack[-2:]),
+            stack[-2:] = call_named('bitAnd', *stack[-2:]),
         elif opname == 'BINARY_XOR':
-            stack[-2:] = call_named('bitXor', stack[-2:]),
+            stack[-2:] = call_named('bitXor', *stack[-2:]),
         elif opname == 'BINARY_OR':
-            stack[-2:] = call_named('bitOr', stack[-2:]),
+            stack[-2:] = call_named('bitOr', *stack[-2:]),
         elif opname == 'INPLACE_POWER':
-            stack[-2:] = call_named('pow', stack[-2:]),
+            stack[-2:] = call_named('pow', *stack[-2:]),
         elif opname == 'INPLACE_MULTIPLY':
-            stack[-2:] = call_named('multiply', stack[-2:]),
+            stack[-2:] = call_named('multiply', *stack[-2:]),
         elif opname == 'INPLACE_MATRIX_MULTIPLY':
-            stack[-2:] = call_named('cast', stack[-2:]),
+            stack[-2:] = call_named('cast', *stack[-2:]),
         elif opname == 'INPLACE_FLOOR_DIVIDE':
-            stack[-2:] = call_named('intDiv', stack[-2:]),
+            stack[-2:] = call_named('intDiv', *stack[-2:]),
         elif opname == 'INPLACE_TRUE_DIVIDE':
-            stack[-2:] = call_named('divide', stack[-2:]),
+            stack[-2:] = call_named('divide', *stack[-2:]),
         elif opname == 'INPLACE_MODULO':
-            stack[-2:] = call_named('modulo', stack[-2:]),
+            stack[-2:] = call_named('modulo', *stack[-2:]),
         elif opname == 'INPLACE_ADD':
-            stack[-2:] = call_named('plus', stack[-2:]),
+            stack[-2:] = call_named('plus', *stack[-2:]),
         elif opname == 'INPLACE_SUBTRACT':
-            stack[-2:] = call_named('minus', stack[-2:]),
+            stack[-2:] = call_named('minus', *stack[-2:]),
         elif opname == 'INPLACE_LSHIFT':
-            stack[-2:] = call_named('bitShiftLeft', stack[-2:]),
+            stack[-2:] = call_named('bitShiftLeft', *stack[-2:]),
         elif opname == 'INPLACE_RSHIFT':
-            stack[-2:] = call_named('bitShiftRight', stack[-2:]),
+            stack[-2:] = call_named('bitShiftRight', *stack[-2:]),
         elif opname == 'INPLACE_AND':
-            stack[-2:] = call_named('bitAnd', stack[-2:]),
+            stack[-2:] = call_named('bitAnd', *stack[-2:]),
         elif opname == 'INPLACE_XOR':
-            stack[-2:] = call_named('bitXor', stack[-2:]),
+            stack[-2:] = call_named('bitXor', *stack[-2:]),
         elif opname == 'INPLACE_OR':
-            stack[-2:] = call_named('bitOr', stack[-2:]),
+            stack[-2:] = call_named('bitOr', *stack[-2:]),
         elif opname == 'STORE_SUBSCR':
-            stack[-3:] = call_named('arrayConcat', [
-                call_named('arraySlice', [
+            stack[-3:] = call_named(
+                'arrayConcat',
+                call_named(
+                    'arraySlice',
                     stack[-2],
                     1,
-                    call_named('minus', [stack[-1], 1]),
-                ]),
-                call_named('array', [stack[-3]]),
-                call_named('arraySlice', [
+                    call_named('minus', stack[-1], 1)
+                ),
+                call_named('array', stack[-3]),
+                call_named(
+                    'arraySlice',
                     stack[-2],
-                    call_named('plus', [stack[-1], 1]),
-                ]),
-            ]),
+                    call_named('plus', stack[-1], 1)
+                )
+            ),
         elif opname == 'DELETE_SUBSCR':
-            stack[-2:] = call_named('arrayConcat', [
-                call_named('arraySlice', [
+            stack[-2:] = call_named(
+                'arrayConcat',
+                call_named(
+                    'arraySlice',
                     stack[-2],
                     1,
-                    call_named('minus', [stack[-1], 1]),
-                ]),
-                call_named('arraySlice', [
+                    call_named('minus', stack[-1], 1)
+                ),
+                call_named(
+                    'arraySlice',
                     stack[-2],
-                    call_named('plus', [stack[-1], 1]),
-                ]),
-            ]),
+                    call_named('plus', stack[-1], 1)
+                )
+            ),
         elif opname == 'GET_AWAITABLE':
             raise exception.DisError(opname)
         elif opname == 'GET_AITER':
@@ -299,41 +303,45 @@ def sql_template(
             if isinstance(stack[-1], ast.BaseStatement):
                 stack[-1] = ast.SimpleClause(stack[-1], argval)
             else:
-                stack[-1] = call_named('tupleElement', [stack[-1], argval])
+                stack[-1] = call_named('tupleElement', stack[-1], argval)
         elif opname == 'COMPARE_OP':
             # notice: see dis.cmp_op
             if argval == '<':
-                stack[-2:] = call_named('less', stack[-2:]),
+                stack[-2:] = call_named('less', *stack[-2:]),
             elif argval == '<=':
-                stack[-2:] = call_named('lessOrEquals', stack[-2:]),
+                stack[-2:] = call_named('lessOrEquals', *stack[-2:]),
             elif argval == '==':
-                stack[-2:] = call_named('equals', stack[-2:]),
+                stack[-2:] = call_named('equals', *stack[-2:]),
             elif argval == '!=':
-                stack[-2:] = call_named('notEquals', stack[-2:]),
+                stack[-2:] = call_named('notEquals', *stack[-2:]),
             elif argval == '>':
-                stack[-2:] = call_named('greater', stack[-2:]),
+                stack[-2:] = call_named('greater', *stack[-2:]),
             elif argval == '>=':
-                stack[-2:] = call_named('greaterOrEquals', stack[-2:]),
+                stack[-2:] = call_named('greaterOrEquals', *stack[-2:]),
             elif argval == 'in':
-                stack[-2:] = call_named('in', stack[-2:]),
+                stack[-2:] = call_named('in', *stack[-2:]),
             elif argval == 'not in':
-                stack[-2:] = call_named('notIn', stack[-2:]),
+                stack[-2:] = call_named('notIn', *stack[-2:]),
             elif argval == 'is':
-                stack[-2:] = call_named('and', [
-                    call_named('equals', [
-                        call_named('toTypeName', stack[-2:-1]),
-                        call_named('toTypeName', stack[-1:]),
-                    ]),
-                    call_named('equals', stack[-2:]),
-                ]),
+                stack[-2:] = call_named(
+                    'and',
+                    call_named(
+                        'equals',
+                        call_named('toTypeName', stack[-2]),
+                        call_named('toTypeName', stack[-1])
+                    ),
+                    call_named('equals', *stack[-2:])
+                ),
             elif argval == 'is not':
-                stack[-2:] = call_named('or', [
-                    call_named('notEquals', [
-                        call_named('toTypeName', stack[-2:-1]),
-                        call_named('toTypeName', stack[-1:]),
-                    ]),
-                    call_named('notEquals', stack[-2:]),
-                ]),
+                stack[-2:] = call_named(
+                    'or',
+                    call_named(
+                        'notEquals',
+                        call_named('toTypeName', stack[-2]),
+                        call_named('toTypeName', stack[-1])
+                    ),
+                    call_named('notEquals', *stack[-2:])
+                ),
             elif argval == 'exception match':
                 raise exception.DisError(opname)
             elif argval == 'BAD':
@@ -400,18 +408,17 @@ def sql_template(
             if isinstance(stack[-arg - 1], ast.Identifier):
                 stack[-arg - 1:] = ast.Call(
                     stack[-arg - 1],
-                    stack[len(stack) - arg:]
+                    *stack[len(stack) - arg:]
                 ),
             elif isinstance(stack[-arg - 1], ast.Call):
                 stack[-arg - 1:] = ast.Call(
                     stack[-arg - 1],
-                    stack[len(stack) - arg:]
+                    *stack[len(stack) - arg:]
                 ),
             elif isinstance(stack[-arg - 1], ast.BaseStatement):
                 stack[-arg - 1:] = ast.ListClause(
                     stack[-arg - 1],
-                    stack[len(stack) - arg:],
-                    {}
+                    *stack[len(stack) - arg:]
                 ),
             else:
                 stack[-arg - 1:] = stack[-arg - 1](*stack[len(stack) - arg:]),
@@ -422,7 +429,7 @@ def sql_template(
 
                 stack[-arg - 2:] = ast.Call(
                     stack[-arg - 2],
-                    stack[-arg - 1:-1]
+                    *stack[-arg - 1:-1]
                 ),
             elif isinstance(stack[-arg - 2], ast.Call):
                 if stack[-1]:
@@ -430,13 +437,13 @@ def sql_template(
 
                 stack[-arg - 2:] = ast.Call(
                     stack[-arg - 2],
-                    stack[-arg - 1:-1]
+                    *stack[-arg - 1:-1]
                 ),
             elif isinstance(stack[-arg - 2], ast.BaseStatement):
                 stack[-arg - 2:] = ast.ListClause(
                     stack[-arg - 2],
-                    stack[-arg - 1:-len(stack[-1]) - 1],
-                    dict(zip(stack[-1], stack[-len(stack[-1]) - 1:-1]))
+                    *stack[-arg - 1:-len(stack[-1]) - 1],
+                    **dict(zip(stack[-1], stack[-len(stack[-1]) - 1:-1]))
                 ),
             else:
                 stack[-arg - 2:] = stack[-arg - 2](
@@ -445,29 +452,25 @@ def sql_template(
                 ),
         elif opname == 'CALL_FUNCTION_EX':
             if arg & 1:
-                kw_arguments = stack[-1]
+                kwargs = stack[-1]
                 stack.pop()
             else:
-                kw_arguments = {}
+                kwargs = {}
 
             if isinstance(stack[-2], ast.Identifier):
-                if kw_arguments:
+                if kwargs:
                     raise TypeError()
 
-                stack[-2:] = ast.Call(stack[-2], stack[-1]),
+                stack[-2:] = ast.Call(stack[-2], *stack[-1]),
             elif isinstance(stack[-2], ast.Call):
-                if kw_arguments:
+                if kwargs:
                     raise TypeError()
 
-                stack[-2:] = ast.Call(stack[-2], stack[-1]),
+                stack[-2:] = ast.Call(stack[-2], *stack[-1]),
             elif isinstance(stack[-2], ast.BaseStatement):
-                stack[-2:] = ast.ListClause(
-                    stack[-2],
-                    stack[-1],
-                    kw_arguments
-                ),
+                stack[-2:] = ast.ListClause(stack[-2], *stack[-1], **kwargs),
             else:
-                stack[-2:] = stack[-2](*stack[-1], **kw_arguments),
+                stack[-2:] = stack[-2](*stack[-1], **kwargs),
         elif opname == 'LOAD_METHOD':
             if isinstance(stack[-1], ast.BaseStatement):
                 stack[-1:] = ast.SimpleClause(stack[-1], argval), stack[-1]
@@ -480,8 +483,7 @@ def sql_template(
             if isinstance(stack[-arg - 2], ast.BaseStatement):
                 stack[-arg - 2:] = ast.ListClause(
                     stack[-arg - 2],
-                    stack[len(stack) - arg:],
-                    {}
+                    *stack[len(stack) - arg:]
                 ),
             else:
                 stack[-arg - 2:] = stack[-arg - 2](*stack[-arg - 1:]),

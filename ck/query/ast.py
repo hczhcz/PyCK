@@ -204,20 +204,20 @@ class Call(BaseExpression):
     def __init__(
             self,
             function: typing.Any,
-            arguments: typing.List[typing.Any]
+            *args: typing.Any
     ) -> None:
         self._function = function
-        self._arguments = arguments
+        self._args = args
 
     def render_expression(self) -> str:
         function_text = escape_value(self._function)
 
-        arguments_text = ', '.join(
+        args_text = ', '.join(
             escape_value(argument)
-            for argument in self._arguments
+            for argument in self._args
         )
 
-        return f'{function_text}({arguments_text})'
+        return f'{function_text}({args_text})'
 
 
 class BaseStatement(BaseAST):
@@ -266,33 +266,33 @@ class ListClause(BaseStatement):
     def __init__(
             self,
             previous: BaseStatement,
-            arguments: typing.List[typing.Any],
-            kw_arguments: typing.Dict[str, typing.Any]
+            *args: typing.Any,
+            **kwargs: typing.Any
     ) -> None:
         self._previous = previous
-        self._arguments = arguments
-        self._kw_arguments = kw_arguments
+        self._args = args
+        self._kwargs = kwargs
 
     def render_statement(self) -> str:
         previous_text = self._previous.render_statement()
-        arguments_text = ', '.join(
+        args_kwargs_text = ', '.join(
             (
                 *(
                     escape_value(argument)
-                    for argument in self._arguments
+                    for argument in self._args
                 ),
                 *(
                     f'''{escape_value(value)} as {escape_text(name, '`')}'''
-                    for name, value in self._kw_arguments.items()
+                    for name, value in self._kwargs.items()
                 ),
             )
         )
 
         # TODO: handle "create table" separately
         if isinstance(self._previous, ListClause):
-            return f'{previous_text} ({arguments_text})'
+            return f'{previous_text} ({args_kwargs_text})'
 
-        if arguments_text:
-            return f'{previous_text} {arguments_text}'
+        if args_kwargs_text:
+            return f'{previous_text} {args_kwargs_text}'
 
         return previous_text
