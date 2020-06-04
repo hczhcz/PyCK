@@ -12,6 +12,7 @@ escape_value = ast.escape_value
 Identifier = ast.Identifier
 Initial = ast.Initial
 ListClause = ast.ListClause
+Raw = ast.Raw
 SimpleClause = ast.SimpleClause
 
 sql_render = sql.sql_render

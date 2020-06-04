@@ -170,6 +170,20 @@ class BaseAST(abc.ABC):
         pass
 
 
+class Raw(BaseAST):
+    def __init__(
+            self,
+            query: str
+    ):
+        self._query = query
+
+    def render_expression(self) -> str:
+        return self._query
+
+    def render_statement(self) -> str:
+        return self._query
+
+
 class BaseExpression(BaseAST):
     def render_statement(self) -> str:
         return f'select {self.render_expression()}'

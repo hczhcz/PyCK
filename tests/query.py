@@ -39,6 +39,13 @@ def test_query_escape_value() -> None:
 
 
 def test_query_identifier() -> None:
+    raw = query.ast.Raw('test')
+
+    assert raw.render_expression() == 'test'
+    assert raw.render_statement() == 'test'
+
+
+def test_query_identifier() -> None:
     identifier_1 = query.ast.Identifier('test')
     identifier_2 = query.ast.Identifier('test`')
 
