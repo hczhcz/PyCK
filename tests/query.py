@@ -50,13 +50,13 @@ def test_query_identifier() -> None:
 
 def test_query_call() -> None:
     identifier = query.ast.Identifier('test')
-    call_1 = query.ast.Call('test', [])
-    call_2 = query.ast.Call(identifier, [1, call_1])
+    call_1 = query.ast.Call(identifier, [])
+    call_2 = query.ast.Call(call_1, [1, call_1])
 
-    assert call_1.render_expression() == 'test()'
-    assert call_1.render_statement() == 'select test()'
-    assert call_2.render_expression() == '`test`(1, test())'
-    assert call_2.render_statement() == 'select `test`(1, test())'
+    assert call_1.render_expression() == '`test`()'
+    assert call_1.render_statement() == 'select `test`()'
+    assert call_2.render_expression() == '`test`()(1, `test`())'
+    assert call_2.render_statement() == 'select `test`()(1, `test`())'
 
 
 def test_query_initial() -> None:

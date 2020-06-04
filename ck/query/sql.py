@@ -26,6 +26,12 @@ def sql_template(
         # TODO
         # pylint: disable=trailing-comma-tuple
 
+        def call_named(
+                name: str,
+                arguments: typing.List[typing.Any]
+        ) -> ast.BaseAST:
+            return ast.Call(ast.Identifier(name), arguments)
+
         if opname == 'NOP':
             pass
         elif opname == 'POP_TOP':
@@ -41,98 +47,98 @@ def sql_template(
         elif opname == 'DUP_TOP_TWO':
             stack.extend(stack[-2:])
         elif opname == 'UNARY_POSITIVE':
-            stack[-1] = ast.Call('negate', [
-                ast.Call('negate', stack[-1:]),
+            stack[-1] = call_named('negate', [
+                call_named('negate', stack[-1:]),
             ])
         elif opname == 'UNARY_NEGATIVE':
-            stack[-1] = ast.Call('negate', stack[-1:])
+            stack[-1] = call_named('negate', stack[-1:])
         elif opname == 'UNARY_NOT':
-            stack[-1] = ast.Call('not', stack[-1:])
+            stack[-1] = call_named('not', stack[-1:])
         elif opname == 'UNARY_INVERT':
-            stack[-1] = ast.Call('bitNot', stack[-1:])
+            stack[-1] = call_named('bitNot', stack[-1:])
         elif opname == 'GET_ITER':
             stack[-1] = iter(stack[-1])
         elif opname == 'GET_YIELD_FROM_ITER':
             # TODO: more accurate semantic
             stack[-1] = iter(stack[-1])
         elif opname == 'BINARY_POWER':
-            stack[-2:] = ast.Call('pow', stack[-2:]),
+            stack[-2:] = call_named('pow', stack[-2:]),
         elif opname == 'BINARY_MULTIPLY':
-            stack[-2:] = ast.Call('multiply', stack[-2:]),
+            stack[-2:] = call_named('multiply', stack[-2:]),
         elif opname == 'BINARY_MATRIX_MULTIPLY':
-            stack[-2:] = ast.Call('cast', stack[-2:]),
+            stack[-2:] = call_named('cast', stack[-2:]),
         elif opname == 'BINARY_FLOOR_DIVIDE':
-            stack[-2:] = ast.Call('intDiv', stack[-2:]),
+            stack[-2:] = call_named('intDiv', stack[-2:]),
         elif opname == 'BINARY_TRUE_DIVIDE':
-            stack[-2:] = ast.Call('divide', stack[-2:]),
+            stack[-2:] = call_named('divide', stack[-2:]),
         elif opname == 'BINARY_MODULO':
-            stack[-2:] = ast.Call('modulo', stack[-2:]),
+            stack[-2:] = call_named('modulo', stack[-2:]),
         elif opname == 'BINARY_ADD':
-            stack[-2:] = ast.Call('plus', stack[-2:]),
+            stack[-2:] = call_named('plus', stack[-2:]),
         elif opname == 'BINARY_SUBTRACT':
-            stack[-2:] = ast.Call('minus', stack[-2:]),
+            stack[-2:] = call_named('minus', stack[-2:]),
         elif opname == 'BINARY_SUBSCR':
             # TODO: subscr for slices?
-            stack[-2:] = ast.Call('arrayElement', stack[-2:]),
+            stack[-2:] = call_named('arrayElement', stack[-2:]),
         elif opname == 'BINARY_LSHIFT':
-            stack[-2:] = ast.Call('bitShiftLeft', stack[-2:]),
+            stack[-2:] = call_named('bitShiftLeft', stack[-2:]),
         elif opname == 'BINARY_RSHIFT':
-            stack[-2:] = ast.Call('bitShiftRight', stack[-2:]),
+            stack[-2:] = call_named('bitShiftRight', stack[-2:]),
         elif opname == 'BINARY_AND':
-            stack[-2:] = ast.Call('bitAnd', stack[-2:]),
+            stack[-2:] = call_named('bitAnd', stack[-2:]),
         elif opname == 'BINARY_XOR':
-            stack[-2:] = ast.Call('bitXor', stack[-2:]),
+            stack[-2:] = call_named('bitXor', stack[-2:]),
         elif opname == 'BINARY_OR':
-            stack[-2:] = ast.Call('bitOr', stack[-2:]),
+            stack[-2:] = call_named('bitOr', stack[-2:]),
         elif opname == 'INPLACE_POWER':
-            stack[-2:] = ast.Call('pow', stack[-2:]),
+            stack[-2:] = call_named('pow', stack[-2:]),
         elif opname == 'INPLACE_MULTIPLY':
-            stack[-2:] = ast.Call('multiply', stack[-2:]),
+            stack[-2:] = call_named('multiply', stack[-2:]),
         elif opname == 'INPLACE_MATRIX_MULTIPLY':
-            stack[-2:] = ast.Call('cast', stack[-2:]),
+            stack[-2:] = call_named('cast', stack[-2:]),
         elif opname == 'INPLACE_FLOOR_DIVIDE':
-            stack[-2:] = ast.Call('intDiv', stack[-2:]),
+            stack[-2:] = call_named('intDiv', stack[-2:]),
         elif opname == 'INPLACE_TRUE_DIVIDE':
-            stack[-2:] = ast.Call('divide', stack[-2:]),
+            stack[-2:] = call_named('divide', stack[-2:]),
         elif opname == 'INPLACE_MODULO':
-            stack[-2:] = ast.Call('modulo', stack[-2:]),
+            stack[-2:] = call_named('modulo', stack[-2:]),
         elif opname == 'INPLACE_ADD':
-            stack[-2:] = ast.Call('plus', stack[-2:]),
+            stack[-2:] = call_named('plus', stack[-2:]),
         elif opname == 'INPLACE_SUBTRACT':
-            stack[-2:] = ast.Call('minus', stack[-2:]),
+            stack[-2:] = call_named('minus', stack[-2:]),
         elif opname == 'INPLACE_LSHIFT':
-            stack[-2:] = ast.Call('bitShiftLeft', stack[-2:]),
+            stack[-2:] = call_named('bitShiftLeft', stack[-2:]),
         elif opname == 'INPLACE_RSHIFT':
-            stack[-2:] = ast.Call('bitShiftRight', stack[-2:]),
+            stack[-2:] = call_named('bitShiftRight', stack[-2:]),
         elif opname == 'INPLACE_AND':
-            stack[-2:] = ast.Call('bitAnd', stack[-2:]),
+            stack[-2:] = call_named('bitAnd', stack[-2:]),
         elif opname == 'INPLACE_XOR':
-            stack[-2:] = ast.Call('bitXor', stack[-2:]),
+            stack[-2:] = call_named('bitXor', stack[-2:]),
         elif opname == 'INPLACE_OR':
-            stack[-2:] = ast.Call('bitOr', stack[-2:]),
+            stack[-2:] = call_named('bitOr', stack[-2:]),
         elif opname == 'STORE_SUBSCR':
-            stack[-3:] = ast.Call('arrayConcat', [
-                ast.Call('arraySlice', [
+            stack[-3:] = call_named('arrayConcat', [
+                call_named('arraySlice', [
                     stack[-2],
                     1,
-                    ast.Call('minus', [stack[-1], 1]),
+                    call_named('minus', [stack[-1], 1]),
                 ]),
-                ast.Call('array', [stack[-3]]),
-                ast.Call('arraySlice', [
+                call_named('array', [stack[-3]]),
+                call_named('arraySlice', [
                     stack[-2],
-                    ast.Call('plus', [stack[-1], 1]),
+                    call_named('plus', [stack[-1], 1]),
                 ]),
             ]),
         elif opname == 'DELETE_SUBSCR':
-            stack[-2:] = ast.Call('arrayConcat', [
-                ast.Call('arraySlice', [
+            stack[-2:] = call_named('arrayConcat', [
+                call_named('arraySlice', [
                     stack[-2],
                     1,
-                    ast.Call('minus', [stack[-1], 1]),
+                    call_named('minus', [stack[-1], 1]),
                 ]),
-                ast.Call('arraySlice', [
+                call_named('arraySlice', [
                     stack[-2],
-                    ast.Call('plus', [stack[-1], 1]),
+                    call_named('plus', [stack[-1], 1]),
                 ]),
             ]),
         elif opname == 'GET_AWAITABLE':
@@ -293,40 +299,40 @@ def sql_template(
             if isinstance(stack[-1], ast.BaseStatement):
                 stack[-1] = ast.SimpleClause(stack[-1], argval)
             else:
-                stack[-1] = ast.Call('tupleElement', [stack[-1], argval])
+                stack[-1] = call_named('tupleElement', [stack[-1], argval])
         elif opname == 'COMPARE_OP':
             # notice: see dis.cmp_op
             if argval == '<':
-                stack[-2:] = ast.Call('less', stack[-2:]),
+                stack[-2:] = call_named('less', stack[-2:]),
             elif argval == '<=':
-                stack[-2:] = ast.Call('lessOrEquals', stack[-2:]),
+                stack[-2:] = call_named('lessOrEquals', stack[-2:]),
             elif argval == '==':
-                stack[-2:] = ast.Call('equals', stack[-2:]),
+                stack[-2:] = call_named('equals', stack[-2:]),
             elif argval == '!=':
-                stack[-2:] = ast.Call('notEquals', stack[-2:]),
+                stack[-2:] = call_named('notEquals', stack[-2:]),
             elif argval == '>':
-                stack[-2:] = ast.Call('greater', stack[-2:]),
+                stack[-2:] = call_named('greater', stack[-2:]),
             elif argval == '>=':
-                stack[-2:] = ast.Call('greaterOrEquals', stack[-2:]),
+                stack[-2:] = call_named('greaterOrEquals', stack[-2:]),
             elif argval == 'in':
-                stack[-2:] = ast.Call('in', stack[-2:]),
+                stack[-2:] = call_named('in', stack[-2:]),
             elif argval == 'not in':
-                stack[-2:] = ast.Call('notIn', stack[-2:]),
+                stack[-2:] = call_named('notIn', stack[-2:]),
             elif argval == 'is':
-                stack[-2:] = ast.Call('and', [
-                    ast.Call('equals', [
-                        ast.Call('toTypeName', stack[-2:-1]),
-                        ast.Call('toTypeName', stack[-1:]),
+                stack[-2:] = call_named('and', [
+                    call_named('equals', [
+                        call_named('toTypeName', stack[-2:-1]),
+                        call_named('toTypeName', stack[-1:]),
                     ]),
-                    ast.Call('equals', stack[-2:]),
+                    call_named('equals', stack[-2:]),
                 ]),
             elif argval == 'is not':
-                stack[-2:] = ast.Call('or', [
-                    ast.Call('notEquals', [
-                        ast.Call('toTypeName', stack[-2:-1]),
-                        ast.Call('toTypeName', stack[-1:]),
+                stack[-2:] = call_named('or', [
+                    call_named('notEquals', [
+                        call_named('toTypeName', stack[-2:-1]),
+                        call_named('toTypeName', stack[-1:]),
                     ]),
-                    ast.Call('notEquals', stack[-2:]),
+                    call_named('notEquals', stack[-2:]),
                 ]),
             elif argval == 'exception match':
                 raise exception.DisError(opname)
