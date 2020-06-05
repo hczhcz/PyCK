@@ -76,7 +76,7 @@ def escape_buffer(
     return f'{quote}{result}{quote}'
 
 
-def escape_value(  # pylint: disable=too-many-return-statements
+def escape_value(
         value: typing.Any
 ) -> str:
     if value is None:
@@ -228,8 +228,8 @@ class Call(BaseExpression):
         function_text = escape_value(self._function)
 
         args_text = ', '.join(
-            escape_value(argument)
-            for argument in self._args
+            escape_value(arg)
+            for arg in self._args
         )
 
         return f'{function_text}({args_text})'
@@ -293,8 +293,8 @@ class ListClause(BaseStatement):
         args_kwargs_text = ', '.join(
             (
                 *(
-                    escape_value(argument)
-                    for argument in self._args
+                    escape_value(arg)
+                    for arg in self._args
                 ),
                 *(
                     f'''{escape_value(value)} as {escape_text(name, '`')}'''
