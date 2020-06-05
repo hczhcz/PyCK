@@ -1,4 +1,6 @@
 import abc
+import inspect
+import types
 import typing
 
 
@@ -153,9 +155,22 @@ def escape_value(  # pylint: disable=too-many-return-statements
     if isinstance(value, BaseAST):
         return value.render_expression()
 
-    # TODO: function?
-    # if ...:
-    #     return 'lambda(tuple(x, y), expr)'
+    if isinstance(value, types.FunctionType):
+        signature = inspect.signature(value)
+
+        args_text = ', '.join(
+            escape_text(parameter, '\'')
+            for parameter in signature.parameters
+        )
+
+        body_text = value(
+            **{
+                parameter: Identifier(parameter)
+                for parameter in signature.parameters
+            }
+        ).render_expression()
+
+        return f'lambda(tuple({args_text}), {body_text})'
 
     raise TypeError()
 
