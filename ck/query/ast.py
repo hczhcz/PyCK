@@ -204,6 +204,17 @@ class BaseExpression(BaseAST):
         return f'select {self.render_expression()}'
 
 
+class Value(BaseExpression):
+    def __init__(
+            self,
+            value: typing.Any
+    ) -> None:
+        self._value = value
+
+    def render_expression(self) -> str:
+        return escape_value(self._value)
+
+
 class Identifier(BaseExpression):
     def __init__(
             self,

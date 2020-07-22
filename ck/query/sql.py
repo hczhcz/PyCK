@@ -592,4 +592,4 @@ def sql_render(
     if isinstance(result, ast.BaseAST):
         return result.render_statement()
 
-    raise TypeError()
+    return ast.Value(result).render_statement()

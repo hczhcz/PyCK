@@ -45,6 +45,13 @@ def test_query_raw() -> None:
     assert raw.render_statement() == 'test'
 
 
+def test_query_value() -> None:
+    value = query.ast.Value(('test', 1))
+
+    assert value.render_expression() == 'tuple(\'test\', 1)'
+    assert value.render_statement() == 'select tuple(\'test\', 1)'
+
+
 def test_query_identifier() -> None:
     identifier_1 = query.ast.Identifier('test')
     identifier_2 = query.ast.Identifier('test`')
