@@ -25,9 +25,11 @@ def create_config(
     config_path = path.joinpath('config.xml')
 
     memory_size = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
-    memory_bound_1 = int(0.6 * memory_size)
-    memory_bound_2 = int(0.5 * memory_size)
-    memory_bound_3 = int(0.1 * memory_size)
+    memory_bound_0 = int(0.75 * memory_size)
+    memory_bound_1 = int(0.7 * memory_size)
+    memory_bound_2 = int(0.65 * memory_size)
+    memory_bound_3 = int(0.3 * memory_size)
+    memory_bound_4 = int(0.1 * memory_size)
 
     # add server settings
 
@@ -69,14 +71,15 @@ def create_config(
         raise TypeError()
 
     data['profiles']['default'] = {
+        'max_server_memory_usage': str(memory_bound_0),
         'max_memory_usage_for_all_queries': str(memory_bound_1),
-        'max_memory_usage': str(memory_bound_1),
-        'max_bytes_before_external_group_by': str(memory_bound_2),
-        'max_bytes_before_external_sort': str(memory_bound_2),
-        'max_bytes_in_distinct': str(memory_bound_2),
-        'max_bytes_before_remerge_sort': str(memory_bound_3),
-        'max_bytes_in_set': str(memory_bound_3),
+        'max_memory_usage': str(memory_bound_2),
+        'max_bytes_before_external_group_by': str(memory_bound_3),
+        'max_bytes_before_external_sort': str(memory_bound_3),
+        'max_bytes_in_distinct': str(memory_bound_3),
         'max_bytes_in_join': str(memory_bound_3),
+        'max_bytes_in_set': str(memory_bound_3),
+        'max_bytes_before_remerge_sort': str(memory_bound_4),
         'log_queries': '1',
         'join_use_nulls': '1',
         'join_algorithm': 'auto',
