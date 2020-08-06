@@ -73,6 +73,7 @@ def _run(
         stack[-2:] = call_named('minus', *stack[-2:]),
     elif opname == 'BINARY_SUBSCR':
         # TODO: subscr for slices?
+        # TODO: general element access for array, tuple, and string?
         stack[-2:] = call_named('arrayElement', *stack[-2:]),
     elif opname == 'BINARY_LSHIFT':
         stack[-2:] = call_named('bitShiftLeft', *stack[-2:]),
@@ -538,10 +539,26 @@ def sql_template(
         bound_arguments.apply_defaults()
 
         global_dict: typing.Dict[str, typing.Any] = {
+            # supported queries:
+            #     with ... select ...
+            #     select ...
+            #     insert into ... select ...
+            #     create table ... engine = ... as select ...
+            #     create view ... as select ...
+            #     create materialized view ... as select ...
             'with_': ast.Initial('with'),
             'select': ast.Initial('select'),
             'select_distinct': ast.Initial('select_distinct'),
+            'insert': ast.Initial('insert'),
             'insert_into': ast.Initial('insert_into'),
+            'create': ast.Initial('create'),
+            'create_table': ast.Initial('create_table'),
+            'create_table_if_not_exists': ast.Initial('create_table_if_not_exists'),
+            'create_view': ast.Initial('create_view'),
+            'create_or_replace_view': ast.Initial('create_or_replace_view'),
+            'create_view_if_not_exists': ast.Initial('create_view_if_not_exists'),
+            'create_materialized_view': ast.Initial('create_materialized_view'),
+            'create_materialized_view_if_not_exists': ast.Initial('create_materialized_view_if_not_exists'),
         }
 
         local_dict: typing.Dict[str, typing.Any] = {
