@@ -39,6 +39,7 @@ def create_config(
         'format_schema_path': str(format_schema_path),
         'user_files_path': str(user_files_path),
         'access_control_path': str(access_control_path),
+        'max_server_memory_usage': str(memory_bound_0),
         'mark_cache_size': '5368709120',
         'logger': {
             'log': str(log_path),
@@ -71,7 +72,6 @@ def create_config(
         raise TypeError()
 
     data['profiles']['default'] = {
-        'max_server_memory_usage': str(memory_bound_0),
         'max_memory_usage_for_all_queries': str(memory_bound_1),
         'max_memory_usage': str(memory_bound_2),
         'max_bytes_before_external_group_by': str(memory_bound_3),
