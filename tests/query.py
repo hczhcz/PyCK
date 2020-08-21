@@ -85,13 +85,13 @@ def test_query_initial() -> None:
 
 def test_query_simple_clause() -> None:
     initial = query.ast.Initial('select')
-    clause_1 = query.ast.SimpleClause(initial, 'test')
-    clause_2 = query.ast.SimpleClause(initial, '__test__test__')
+    clause_1 = query.ast.SimpleClause(initial, 'order___by')
+    clause_2 = query.ast.SimpleClause(initial, 'engine')
 
-    assert clause_1.render_expression() == '(select test)'
-    assert clause_1.render_statement() == 'select test'
-    assert clause_2.render_expression() == '(select test test)'
-    assert clause_2.render_statement() == 'select test test'
+    assert clause_1.render_expression() == '(select order by)'
+    assert clause_1.render_statement() == 'select order by'
+    assert clause_2.render_expression() == '(select engine =)'
+    assert clause_2.render_statement() == 'select engine ='
 
 
 def test_query_list_clause() -> None:

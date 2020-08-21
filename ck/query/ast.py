@@ -285,6 +285,9 @@ class SimpleClause(BaseStatement):
             if part
         )
 
+        if name_text.lower() == 'engine':
+            name_text += ' ='
+
         return f'{previous_text} {name_text}'
 
 
