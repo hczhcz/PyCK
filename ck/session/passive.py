@@ -77,7 +77,7 @@ class PassiveSession:
         )():
             raise exception.ShellError(
                 self._host,
-                b''.join(stderr_list).decode()
+                b''.join(stderr_list)
             )
 
         (
@@ -190,7 +190,7 @@ class PassiveSession:
                 raise exception.QueryError(
                     self._host,
                     query,
-                    b''.join(stderr_list).decode()
+                    b''.join(stderr_list)
                 )
 
         return join

@@ -137,7 +137,7 @@ class RemoteSession(passive.PassiveSession):
         )():
             raise exception.ShellError(
                 self._host,
-                b''.join(stderr_list).decode()
+                b''.join(stderr_list)
             )
 
         # setup
@@ -165,7 +165,7 @@ class RemoteSession(passive.PassiveSession):
         )():
             raise exception.ShellError(
                 self._host,
-                b''.join(stderr_list).decode()
+                b''.join(stderr_list)
             )
 
         # run
@@ -235,7 +235,7 @@ class RemoteSession(passive.PassiveSession):
         )():
             raise exception.ShellError(
                 self._host,
-                b''.join(stderr_list).decode()
+                b''.join(stderr_list)
             )
 
         for _ in range(ping_retry):
@@ -259,7 +259,7 @@ class RemoteSession(passive.PassiveSession):
             )():
                 raise exception.ShellError(
                     self._host,
-                    b''.join(stderr_list).decode()
+                    b''.join(stderr_list)
                 )
 
             while self.get_pid() is not None:
