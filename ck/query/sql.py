@@ -553,12 +553,16 @@ def sql_template(
             'insert_into': ast.Initial('insert_into'),
             'create': ast.Initial('create'),
             'create_table': ast.Initial('create_table'),
-            'create_table_if_not_exists': ast.Initial('create_table_if_not_exists'),
+            'create_table_if_not_exists':
+                ast.Initial('create_table_if_not_exists'),
             'create_view': ast.Initial('create_view'),
             'create_or_replace_view': ast.Initial('create_or_replace_view'),
-            'create_view_if_not_exists': ast.Initial('create_view_if_not_exists'),
-            'create_materialized_view': ast.Initial('create_materialized_view'),
-            'create_materialized_view_if_not_exists': ast.Initial('create_materialized_view_if_not_exists'),
+            'create_view_if_not_exists':
+                ast.Initial('create_view_if_not_exists'),
+            'create_materialized_view':
+                ast.Initial('create_materialized_view'),
+            'create_materialized_view_if_not_exists':
+                ast.Initial('create_materialized_view_if_not_exists'),
         }
 
         local_dict: typing.Dict[str, typing.Any] = {
