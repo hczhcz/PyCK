@@ -72,7 +72,7 @@ def create_config(
         raise TypeError()
 
     data['profiles']['default'] = {
-        'max_memory_usage_for_all_queries': str(memory_bound_1),
+        'max_memory_usage_for_user': str(memory_bound_1),
         'max_memory_usage': str(memory_bound_2),
         'max_bytes_before_external_group_by': str(memory_bound_3),
         'max_bytes_before_external_sort': str(memory_bound_3),
