@@ -27,6 +27,7 @@ class RemoteSession(passive.PassiveSession):
             ssh_public_key: typing.Optional[str] = None,
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
             data_dir: typing.Optional[str] = None,
+            memory_limit: typing.Optional[int] = None,
             config: typing.Optional[typing.Dict[str, typing.Any]] = None,
             auto_start: bool = True,
             stop: bool = False,
@@ -56,6 +57,7 @@ class RemoteSession(passive.PassiveSession):
         else:
             self._path = pathlib.Path(data_dir)
 
+        self._memory_limit = memory_limit or 0
         self._config = config or {}
         self._auto_start = auto_start
 
@@ -75,6 +77,8 @@ class RemoteSession(passive.PassiveSession):
         # get pid
 
         stdout_list: typing.List[bytes] = []
+
+        assert self._ssh_client is not None
 
         if connection.run_ssh(
                 self._ssh_client,
@@ -124,6 +128,8 @@ class RemoteSession(passive.PassiveSession):
 
         stderr_list: typing.List[bytes] = []
 
+        assert self._ssh_client is not None
+
         if connection.run_ssh(
                 self._ssh_client,
                 [
@@ -158,6 +164,7 @@ class RemoteSession(passive.PassiveSession):
                     'user': self._user,
                     'password': self._password,
                     'data_dir': str(self._path),
+                    'memory_limit': self._memory_limit,
                     'config': self._config,
                 }).encode()]),
                 iteration.empty_out(),
@@ -221,6 +228,8 @@ class RemoteSession(passive.PassiveSession):
         # kill process
 
         stderr_list: typing.List[bytes] = []
+
+        assert self._ssh_client is not None
 
         if connection.run_ssh(
                 self._ssh_client,

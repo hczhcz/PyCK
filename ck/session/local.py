@@ -29,6 +29,7 @@ class LocalSession(passive.PassiveSession):
             ssh_public_key: typing.Optional[str] = None,
             ssh_command_prefix: typing.Optional[typing.List[str]] = None,
             data_dir: typing.Optional[str] = None,
+            memory_limit: typing.Optional[int] = None,
             config: typing.Optional[typing.Dict[str, typing.Any]] = None,
             auto_start: bool = True,
             stop: bool = False,
@@ -54,6 +55,7 @@ class LocalSession(passive.PassiveSession):
         else:
             self._path = pathlib.Path(data_dir)
 
+        self._memory_limit = memory_limit or 0
         self._config = config or {}
         self._auto_start = auto_start
 
@@ -113,6 +115,7 @@ class LocalSession(passive.PassiveSession):
             self._user,
             self._password,
             str(self._path),
+            self._memory_limit,
             self._config
         )
 

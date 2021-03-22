@@ -3,7 +3,7 @@ import threading
 import typing
 
 # third-party
-import paramiko  # type: ignore[import]
+import paramiko
 
 
 def connect_ssh(
@@ -34,7 +34,11 @@ def run_ssh(
 
     # connect
 
-    channel = client.get_transport().open_session()
+    transport = client.get_transport()
+
+    assert transport is not None
+
+    channel = transport.open_session()
     channel.exec_command(' '.join(
         shlex.quote(arg)
         for arg in args

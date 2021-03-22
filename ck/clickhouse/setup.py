@@ -11,6 +11,7 @@ def create_config(
         user: str,
         password: str,
         data_dir: str,
+        memory_limit: int,
         # notice: recursive type
         config: typing.Dict[str, typing.Any]
 ) -> None:
@@ -25,10 +26,11 @@ def create_config(
     config_path = path.joinpath('config.xml')
 
     memory_size = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
-    memory_bound_0 = int(0.75 * memory_size)
-    memory_bound_1 = int(0.7 * memory_size)
-    memory_bound_2 = int(0.65 * memory_size)
-    memory_bound_3 = int(0.3 * memory_size)
+    memory_limit = memory_limit or int(memory_size * 0.8)
+    memory_bound_0 = memory_limit
+    memory_bound_1 = int(0.95 * memory_limit)
+    memory_bound_2 = int(0.9 * memory_limit)
+    memory_bound_3 = int(0.45 * memory_size)
     memory_bound_4 = int(0.1 * memory_size)
 
     # add server settings

@@ -4,6 +4,7 @@ import urllib.parse
 
 # third-party
 import pandas  # type: ignore[import]
+import paramiko
 import pyarrow  # type: ignore[import]
 import typing_extensions
 
@@ -42,7 +43,7 @@ class PassiveSession:
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix or []
 
-        self._ssh_client = None
+        self._ssh_client: typing.Optional[paramiko.SSHClient] = None
         self._ssh_default_data_dir: typing.Optional[str] = None
         self._ssh_binary_file: typing.Optional[str] = None
 
@@ -163,6 +164,7 @@ class PassiveSession:
         elif real_method == 'ssh':
             self._require_ssh()
 
+            assert self._ssh_client is not None
             assert self._ssh_binary_file is not None
 
             raw_join = connection.run_ssh(
