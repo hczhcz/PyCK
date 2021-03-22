@@ -147,7 +147,13 @@ class PassiveSession:
                 f'/?{urllib.parse.urlencode(real_settings)}',
                 {
                     'X-ClickHouse-User': self._user,
-                    'X-ClickHouse-Key': self._password,
+                    **(
+                        {
+                            'X-ClickHouse-Key': self._password,
+                        }
+                        if self._password
+                        else {}
+                    ),
                 },
                 gen_stdin,
                 gen_stdout,
