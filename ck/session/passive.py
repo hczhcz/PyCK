@@ -397,7 +397,8 @@ class PassiveSession:
                     dataframe = None
                     batch.close()
                     write_stream.close()
-
+            except pyarrow.ArrowInvalid:
+                pass
             except BaseException as raw_error:  # pylint: disable=broad-except
                 error = raw_error
 
