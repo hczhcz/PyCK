@@ -3,6 +3,7 @@ import typing
 import urllib.parse
 
 # third-party
+import numpy
 import pandas  # type: ignore[import]
 import paramiko
 import pyarrow  # type: ignore[import]
@@ -348,6 +349,7 @@ class PassiveSession:
             self,
             query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
+            encoding: typing.Optional[str] = 'utf-8',
             method: typing.Optional[
                 typing_extensions.Literal['tcp', 'http', 'ssh']
             ] = None,
@@ -387,7 +389,124 @@ class PassiveSession:
                 if dataframe is None:
                     batch = pyarrow.RecordBatchStreamReader(read_stream)
                     dataframe = batch.read_pandas()
+
+                    if encoding is not None:
+                        def decode(
+                                value: typing.Any
+                        ) -> typing.Any:
+                            if type(value) is bytes:
+                                assert encoding is not None
+
+                                return value.decode(encoding)
+
+                            if type(value) is bytearray:
+                                assert encoding is not None
+
+                                return value.decode(encoding)
+
+                            if type(value) is tuple:
+                                return tuple(
+                                    decode(child)
+                                    for child in value
+                                )
+
+                            if type(value) is list:
+                                return [
+                                    decode(child)
+                                    for child in value
+                                ]
+
+                            if type(value) is numpy.ndarray:
+                                return numpy.array([
+                                    decode(child)
+                                    for child in value
+                                ])
+
+                            if type(value) is set:
+                                return {
+                                    decode(child)
+                                    for child in value
+                                }
+
+                            if type(value) is frozenset:
+                                return frozenset(
+                                    decode(child)
+                                    for child in value
+                                )
+
+                            if type(value) is dict:
+                                return {
+                                    key: decode(child)
+                                    for key, child in value.items()
+                                }
+
+                            return value
+
+                        dataframe = pandas.DataFrame({
+                            column: (
+                                dataframe[column].apply(decode)
+                                if dataframe[column].dtype == 'O'
+                                else dataframe[column]
+                            )
+                            for column in dataframe.columns
+                        })
                 else:
+                    if encoding is not None:
+                        def encode(
+                                value: typing.Any
+                        ) -> typing.Any:
+                            if type(value) is str:
+                                assert encoding is not None
+
+                                return value.encode(encoding)
+
+                            if type(value) is tuple:
+                                return tuple(
+                                    encode(child)
+                                    for child in value
+                                )
+
+                            if type(value) is list:
+                                return [
+                                    encode(child)
+                                    for child in value
+                                ]
+
+                            if type(value) is numpy.ndarray:
+                                return numpy.array([
+                                    encode(child)
+                                    for child in value
+                                ])
+
+                            if type(value) is set:
+                                return {
+                                    encode(child)
+                                    for child in value
+                                }
+
+                            if type(value) is frozenset:
+                                return frozenset(
+                                    encode(child)
+                                    for child in value
+                                )
+
+                            if type(value) is dict:
+                                return {
+                                    key: encode(child)
+                                    for key, child in value.items()
+                                }
+
+                            return value
+
+                        dataframe = pandas.DataFrame({
+                            column: (
+                                dataframe[column].apply(encode)
+                                if dataframe[column].dtype == 'O'
+                                else dataframe[column]
+                            )
+                            for column in dataframe.columns
+                        })
+
                     table = pyarrow.Table.from_pandas(dataframe)
                     batch = pyarrow.RecordBatchStreamWriter(
                         write_stream,
@@ -425,6 +544,7 @@ class PassiveSession:
             self,
             query: str,
             dataframe: typing.Optional[pandas.DataFrame] = None,
+            encoding: typing.Optional[str] = 'utf-8',
             method: typing.Optional[
                 typing_extensions.Literal['tcp', 'http', 'ssh']
             ] = None,
@@ -434,6 +554,7 @@ class PassiveSession:
         return self.query_pandas_async(
             query,
             dataframe,
+            encoding,
             method,
             settings,
             join_interval
