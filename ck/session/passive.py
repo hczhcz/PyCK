@@ -448,7 +448,7 @@ class PassiveSession:
                                 if dataframe[column].dtype == 'O'
                                 else dataframe[column]
                             )
-                            for column in dataframe.columns
+                            for column in dataframe
                         })
                 else:
                     if encoding is not None:
@@ -504,10 +504,13 @@ class PassiveSession:
                                 if dataframe[column].dtype == 'O'
                                 else dataframe[column]
                             )
-                            for column in dataframe.columns
+                            for column in dataframe
                         })
 
-                    table = pyarrow.Table.from_pandas(dataframe)
+                    table = pyarrow.Table.from_arrays([
+                        pyarrow.array(dataframe[column].values)
+                        for column in dataframe
+                    ], dataframe.columns)
                     batch = pyarrow.RecordBatchStreamWriter(
                         write_stream,
                         table.schema
