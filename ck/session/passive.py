@@ -1,6 +1,7 @@
 import threading
 import typing
 import urllib.parse
+import uuid
 
 # third-party
 import numpy
@@ -44,6 +45,7 @@ class PassiveSession:
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix or []
 
+        self._session_id = str(uuid.uuid4())
         self._ssh_client: typing.Optional[paramiko.SSHClient] = None
         self._ssh_default_data_dir: typing.Optional[str] = None
         self._ssh_binary_file: typing.Optional[str] = None
@@ -115,6 +117,13 @@ class PassiveSession:
 
         real_method = method or self._method
         real_settings = {
+            **(
+                {
+                    'session_id': self._session_id,
+                }
+                if real_method == 'http'
+                else {}
+            ),
             **self._settings,
             **(settings or {}),
         }
