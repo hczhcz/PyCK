@@ -8,12 +8,15 @@ def stream_in(
         stream: typing.BinaryIO,
         buffer_size: int = 1 << 20
 ) -> typing.Generator[bytes, None, None]:
-    data = stream.read(buffer_size)
-
-    while data:
-        yield data
-
+    try:
         data = stream.read(buffer_size)
+
+        while data:
+            yield data
+
+            data = stream.read(buffer_size)
+    finally:
+        stream.close()
 
 
 def pipe_in(
@@ -32,14 +35,15 @@ def file_in(
 def stream_out(
         stream: typing.BinaryIO
 ) -> typing.Generator[None, bytes, None]:
-    data = yield
-
-    while data:
-        stream.write(data)
-
+    try:
         data = yield
 
-    stream.close()
+        while data:
+            stream.write(data)
+
+            data = yield
+    finally:
+        stream.close()
 
     yield
 

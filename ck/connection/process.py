@@ -36,8 +36,8 @@ def run_process(
             process.stdin.close()
         except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
-            gen_stdout.send(b'')
-            gen_stderr.send(b'')
+            gen_stdout.close()
+            gen_stderr.close()
 
     def receive_stdout() -> None:
         nonlocal error
@@ -55,8 +55,8 @@ def run_process(
             gen_stdout.send(b'')
         except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
-            gen_stdout.send(b'')
-            gen_stderr.send(b'')
+            gen_stdout.close()
+            gen_stderr.close()
 
     def receive_stderr() -> None:
         nonlocal error
@@ -74,8 +74,8 @@ def run_process(
             gen_stderr.send(b'')
         except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
-            gen_stdout.send(b'')
-            gen_stderr.send(b'')
+            gen_stdout.close()
+            gen_stderr.close()
 
     stdin_thread = threading.Thread(target=send_stdin)
     stdout_thread = threading.Thread(target=receive_stdout)

@@ -49,8 +49,8 @@ def run_http(
             gen_stderr.send(b'')
         except BaseException as raw_error:  # pylint: disable=broad-except
             error = raw_error
-            gen_stdout.send(b'')
-            gen_stderr.send(b'')
+            gen_stdout.close()
+            gen_stderr.close()
         finally:
             if connection:
                 connection.close()
