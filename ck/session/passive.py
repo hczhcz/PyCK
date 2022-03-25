@@ -137,9 +137,9 @@ class PassiveSession:
                     f'--port={self._tcp_port}',
                     f'--user={self._user}',
                     *(
-                        (f'--password={self._password}',)
+                        [f'--password={self._password}']
                         if self._password
-                        else ()
+                        else []
                     ),
                     *(
                         f'--{key}={value}'
@@ -186,9 +186,9 @@ class PassiveSession:
                     f'--port={self._tcp_port}',
                     f'--user={self._user}',
                     *(
-                        (f'--password={self._password}',)
+                        [f'--password={self._password}']
                         if self._password
-                        else ()
+                        else []
                     ),
                     *(
                         f'--{key}={value}'

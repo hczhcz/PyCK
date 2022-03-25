@@ -1,7 +1,7 @@
-import posix
+import os
 import sys
 
 from ck.clickhouse import lookup
 
 
-posix.execv(lookup.binary_file(), sys.argv)
+os.execv(lookup.binary_file(), sys.argv)
