@@ -26,6 +26,7 @@ class PassiveSession:
             password: str = '',
             method: typing_extensions.Literal['tcp', 'http', 'ssh'] = 'http',
             settings: typing.Optional[typing.Dict[str, str]] = None,
+            http_session: bool = False,
             ssh_port: int = 22,
             ssh_username: typing.Optional[str] = None,
             ssh_password: typing.Optional[str] = None,
@@ -39,13 +40,13 @@ class PassiveSession:
         self._password = password
         self._method = method
         self._settings = settings or {}
+        self._session_id = str(uuid.uuid4()) if http_session else None
         self._ssh_port = ssh_port
         self._ssh_username = ssh_username
         self._ssh_password = ssh_password
         self._ssh_public_key = ssh_public_key
         self._ssh_command_prefix = ssh_command_prefix or []
 
-        self._session_id = str(uuid.uuid4())
         self._ssh_client: typing.Optional[paramiko.SSHClient] = None
         self._ssh_default_data_dir: typing.Optional[str] = None
         self._ssh_binary_file: typing.Optional[str] = None
@@ -121,7 +122,7 @@ class PassiveSession:
                 {
                     'session_id': self._session_id,
                 }
-                if real_method == 'http'
+                if real_method == 'http' and self._session_id is not None
                 else {}
             ),
             **self._settings,
