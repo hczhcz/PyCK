@@ -70,26 +70,26 @@ def create_config(
         **data['profiles'],
     }
 
-    if not isinstance(data['profiles']['default'], dict):
-        raise TypeError()
+    for profile_name in data['profiles']:
+        if not isinstance(data['profiles'][profile_name], dict):
+            raise TypeError()
 
-    data['profiles']['default'] = {
-        'max_memory_usage_for_user': str(memory_bound_1),
-        'max_memory_usage': str(memory_bound_2),
-        'max_bytes_before_external_group_by': str(memory_bound_3),
-        'max_bytes_before_external_sort': str(memory_bound_3),
-        'max_bytes_in_distinct': str(memory_bound_3),
-        'max_bytes_in_join': str(memory_bound_3),
-        'max_bytes_in_set': str(memory_bound_3),
-        'max_bytes_before_remerge_sort': str(memory_bound_4),
-        'log_queries': '1',
-        'join_use_nulls': '1',
-        'join_algorithm': 'auto',
-        'input_format_allow_errors_num': '100',
-        'input_format_allow_errors_ratio': '0.01',
-        'date_time_input_format': 'best_effort',
-        **data['profiles']['default'],
-    }
+        data['profiles'][profile_name] = {
+            'max_memory_usage_for_user': str(memory_bound_1),
+            'max_memory_usage': str(memory_bound_2),
+            'max_bytes_before_external_group_by': str(memory_bound_3),
+            'max_bytes_before_external_sort': str(memory_bound_3),
+            'max_bytes_in_distinct': str(memory_bound_3),
+            'max_bytes_in_join': str(memory_bound_3),
+            'max_bytes_in_set': str(memory_bound_3),
+            'max_bytes_before_remerge_sort': str(memory_bound_4),
+            'join_use_nulls': '1',
+            'join_algorithm': 'auto',
+            'input_format_allow_errors_num': '100',
+            'input_format_allow_errors_ratio': '0.01',
+            'date_time_input_format': 'best_effort',
+            **data['profiles'][profile_name],
+        }
 
     # add user
 
@@ -101,16 +101,21 @@ def create_config(
         **data['users'],
     }
 
-    if not isinstance(data['users'][user], dict):
-        raise TypeError()
+    for user_name in data['users']:
+        if not isinstance(data['users'][user_name], dict):
+            raise TypeError()
+
+        data['users'][user_name] = {
+            'networks': {
+                'ip': '::/0',
+            },
+            'profile': 'default',
+            'quota': 'default',
+            **data['users'][user_name],
+        }
 
     data['users'][user] = {
         'access_management': '1',
-        'networks': {
-            'ip': '::/0',
-        },
-        'profile': 'default',
-        'quota': 'default',
         **data['users'][user],
         'password': password,
     }
